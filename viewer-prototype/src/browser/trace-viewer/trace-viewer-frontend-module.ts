@@ -4,7 +4,9 @@ import { TraceViewerWidget, TraceViewerWidgetOptions } from './trace-viewer';
 import { TraceViewerContribution } from './trace-viewer-contribution';
 import { TraceViewerEnvironment } from '../../common/trace-viewer-environment';
 import { TraceServerUrlProvider } from '../../common/trace-server-url-provider';
-import { CommandContribution } from '@theia/core/lib/common';
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+
+import {TraceContextMenuContribution} from '../trace-context-menu-contribution';
 
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-balham-dark.css';
@@ -21,7 +23,11 @@ import { TraceServerUrlProviderImpl } from '../trace-server-url-provider-fronten
 // import { TracePropertiesContribution } from '../trace-properties-view/trace-properties-view-contribution';
 // import { TracePropertiesWidget, TRACE_PROPERTIES_ID } from '../trace-properties-view/trace-properties-view-widget';
 
+import { TraceContextMenuWidget } from '../trace-context-menu';
+
 export default new ContainerModule(bind => {
+
+
 
     bind(TraceViewerEnvironment).toSelf().inRequestScope();
     bind(TraceServerUrlProviderImpl).toSelf().inSingletonScope();
@@ -45,6 +51,15 @@ export default new ContainerModule(bind => {
     [CommandContribution, OpenHandler, FrontendApplicationContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(TraceViewerContribution)
     );
+
+    bind(TraceContextMenuWidget).toSelf().inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: TraceContextMenuWidget.ID,
+        createWidget: () => container.get(TraceContextMenuWidget)
+    })).inSingletonScope();
+
+    bind(TraceContextMenuContribution).toSelf().inSingletonScope();
+    bind(MenuContribution).toService(TraceContextMenuContribution);
 
     bindViewContribution(bind, TraceExplorerContribution);
     bind(TraceExplorerWidget).toSelf();
