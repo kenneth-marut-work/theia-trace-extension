@@ -1,5 +1,5 @@
 import { ContainerModule, Container } from 'inversify';
-import { WidgetFactory, OpenHandler, FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
+import { WidgetFactory, OpenHandler, FrontendApplicationContribution, bindViewContribution, Widget } from '@theia/core/lib/browser';
 import { TraceViewerWidget, TraceViewerWidgetOptions } from './trace-viewer';
 import { TraceViewerContribution } from './trace-viewer-contribution';
 import { TraceViewerEnvironment } from '../../common/trace-viewer-environment';
@@ -49,10 +49,15 @@ export default new ContainerModule(bind => {
     bindViewContribution(bind, TraceExplorerContribution);
     bind(TraceExplorerWidget).toSelf();
     bind(FrontendApplicationContribution).toService(TraceExplorerContribution);
+    // bind(WidgetFactory).toDynamicValue(context => ({
+    //     id: TRACE_EXPLORER_ID,
+    //     createWidget: () => context.container.get<TraceExplorerWidget>(TraceExplorerWidget)
+    // }));
+
     bind(WidgetFactory).toDynamicValue(context => ({
         id: TRACE_EXPLORER_ID,
-        createWidget: () => context.container.get<TraceExplorerWidget>(TraceExplorerWidget)
-    }));
+        createWidget: (): TraceExplorerWidget => TraceExplorerWidget.createWidget(context.container)
+    })).inSingletonScope();
 
     bind(TraceServerConnectionStatusService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TraceServerConnectionStatusService);

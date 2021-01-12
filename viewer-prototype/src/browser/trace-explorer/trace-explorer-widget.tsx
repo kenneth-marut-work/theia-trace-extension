@@ -1,4 +1,4 @@
-import { injectable, inject } from 'inversify';
+import { injectable, inject, interfaces, Container, postConstruct } from 'inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from 'react';
 import { List, ListRowProps } from 'react-virtualized';
@@ -16,9 +16,11 @@ import { signalManager, Signals } from '@trace-viewer/base/lib/signal-manager';
 /* FIXME: This may cause Circular dependency between trace-viewer and trace-explorer-widget */
 import { TraceViewerWidget } from '../trace-viewer/trace-viewer';
 import { TraceViewerContribution } from '../trace-viewer/trace-viewer-contribution';
+import { TraceExplorerAnalysisWidget } from './trace-explorer-sub-widgets/trace-explorer-analysis-widget';
+import { ViewContainer, PanelLayout, BaseWidget } from '@theia/core/lib/browser';
 
-export const TRACE_EXPLORER_ID = 'trace-explorer';
 export const TRACE_EXPLORER_LABEL = 'Trace Explorer';
+export const TRACE_EXPLORER_ID = 'trace-explorer';
 
 export class OutputAddedSignalPayload {
     private outputDescriptor: OutputDescriptor;
@@ -39,7 +41,8 @@ export class OutputAddedSignalPayload {
 }
 
 @injectable()
-export class TraceExplorerWidget extends ReactWidget {
+// export class TraceExplorerWidget extends ReactWidget {
+export class TraceExplorerWidget extends BaseWidget {
     @inject(TraceViewerContribution)
     protected readonly traceViewerContribution!: TraceViewerContribution;
 
@@ -65,9 +68,25 @@ export class TraceExplorerWidget extends ReactWidget {
     private static experimentSelectedEmitter = new Emitter<Experiment>();
     public static experimentSelectedSignal = TraceExplorerWidget.experimentSelectedEmitter.event;
 
+    protected viewContainer: ViewContainer;
+
+    static createContainer(parent: interfaces.Container): Container {
+        const child = new Container({ defaultScope: 'Singleton' });
+        child.parent = parent;
+        child.bind(TraceExplorerAnalysisWidget).toSelf().inSingletonScope();
+        child.bind(TraceExplorerWidget).toSelf().inSingletonScope();
+        return child;
+    }
+
+    static createWidget(parent: interfaces.Container): TraceExplorerWidget {
+        return TraceExplorerWidget.createContainer(parent).get(TraceExplorerWidget);
+    }
+
     constructor(
         @inject(TspClientProvider) private tspClientProvider: TspClientProvider,
-        @inject(EditorManager) protected readonly editorManager: EditorManager
+        @inject(EditorManager) protected readonly editorManager: EditorManager,
+        @inject(ViewContainer.Factory) protected readonly viewContainerFactory: ViewContainer.Factory,
+        @inject(TraceExplorerAnalysisWidget) protected readonly analysisWidget: TraceExplorerAnalysisWidget
     ) {
         super();
         this.id = TRACE_EXPLORER_ID;
@@ -80,11 +99,24 @@ export class TraceExplorerWidget extends ReactWidget {
         signalManager().on(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
         signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
         this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.onWidgetActivated(experiment)));
+
+        this.viewContainer = this.viewContainerFactory({
+            id: this.id
+        });
+        this.viewContainer.addWidget(this.analysisWidget);
+        this.toDispose.push(this.viewContainer);
+        const layout = this.layout = new PanelLayout();
+        layout.addWidget(this.viewContainer);
         this.initialize();
 
         this.tspClientProvider.addTspClientChangeListener(tspClient => {
             this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
+    }
+
+    @postConstruct()
+    init(): void {
+        console.log('SENTINEL CODE', 0);
     }
 
     dispose() {
