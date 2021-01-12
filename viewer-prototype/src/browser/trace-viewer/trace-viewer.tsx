@@ -2,22 +2,23 @@ import { MessageService, Path } from '@theia/core';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { ApplicationShell, Message, StatusBar } from '@theia/core/lib/browser';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import * as React from 'react';
 import { OutputDescriptor } from 'tsp-typescript-client/lib/models/output-descriptor';
 import { Trace } from 'tsp-typescript-client/lib/models/trace';
 import { TspClient } from 'tsp-typescript-client/lib/protocol/tsp-client';
 import { TspClientProvider } from '../tsp-client-provider';
 import { TraceManager } from '@trace-viewer/base/lib/trace-manager';
-import { Emitter } from '@theia/core';
 import { ExperimentManager } from '@trace-viewer/base/lib/experiment-manager';
-import { OutputAddedSignalPayload, TraceExplorerWidget } from '../trace-explorer/trace-explorer-widget';
 import { TraceContextComponent } from '@trace-viewer/react-components/lib/components/trace-context-component';
 import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
 import URI from '@theia/core/lib/common/uri';
 import { TheiaMessageManager } from '../theia-message-manager';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { signalManager } from '@trace-viewer/base/lib/signal-manager';
+import { TraceExplorerOpenedTracesWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
+import { TraceExplorerAnalysisWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-analysis-widget';
+import { OutputAddedSignalPayload } from '../trace-explorer/output-added-signal-payload';
 
 export const TraceViewerWidgetOptions = Symbol('TraceViewerWidgetOptions');
 export interface TraceViewerWidgetOptions {
@@ -42,8 +43,8 @@ export class TraceViewerWidget extends ReactWidget {
         this.resizeHandlers.push(h);
     };
 
-    private static widgetActivatedEmitter = new Emitter<Experiment>();
-    public static widgetActivatedSignal = TraceViewerWidget.widgetActivatedEmitter.event;
+    @inject(TraceExplorerOpenedTracesWidget) protected readonly openedTracesWidget!: TraceExplorerOpenedTracesWidget;
+    @inject(TraceExplorerAnalysisWidget) protected readonly analysisWidget!: TraceExplorerAnalysisWidget;
 
     constructor(
         @inject(TraceViewerWidgetOptions) protected readonly options: TraceViewerWidgetOptions,
@@ -52,7 +53,7 @@ export class TraceViewerWidget extends ReactWidget {
         @inject(FileSystem) private readonly fileSystem: FileSystem,
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(TheiaMessageManager) private readonly _signalHandler: TheiaMessageManager,
-        @inject(MessageService) protected readonly messageService: MessageService
+        @inject(MessageService) protected readonly messageService: MessageService,
     ) {
         super();
         this.uri = new Path(this.options.traceURI);
@@ -60,8 +61,6 @@ export class TraceViewerWidget extends ReactWidget {
         this.title.label = 'Trace: ' + this.uri.base;
         this.title.closable = true;
         this.addClass('theia-trace-open');
-        this.toDispose.push(TraceExplorerWidget.outputAddedSignal(output => this.onOutputAdded(output)));
-        this.toDispose.push(TraceExplorerWidget.experimentSelectedSignal(experiment => this.onExperimentSelected(experiment)));
         this.backgroundTheme = ThemeService.get().getCurrentTheme().type;
         ThemeService.get().onThemeChange(() => this.updateBackgroundTheme());
         this.initialize();
@@ -73,6 +72,14 @@ export class TraceViewerWidget extends ReactWidget {
             this.traceManager = this.tspClientProvider.getTraceManager();
             this.experimentManager = this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
+        // Make node focusable so it can achieve focus on activate (avoid warning);
+        this.node.tabIndex = 0;
+    }
+
+    @postConstruct()
+    init(): void {
+        this.toDispose.push(this.analysisWidget.outputAddedSignal(output => this.onOutputAdded(output)));
+        this.toDispose.push(this.openedTracesWidget.experimentSelectedSignal(experiment => this.onExperimentSelected(experiment)));
     }
 
     private updateBackgroundTheme() {
@@ -85,20 +92,20 @@ export class TraceViewerWidget extends ReactWidget {
          * TODO: use backend service to find traces
          */
 
-         const isCancelled = { value: false };
+        const isCancelled = { value: false };
 
         // This will show a progress dialog with "Cancel" option
         this.messageService.showProgress({
             text: 'Open traces'
         },
-        () => {
-            isCancelled.value = true;
-        })
-        .then(async progress => {
-            try {
-                const tracesArray = new Array<Path>();
-                const fileStat = await this.fileSystem.getFileStat(this.uri.toString());
-                progress.report({message: 'Finding traces ', work: {done: 10, total: 100}});
+            () => {
+                isCancelled.value = true;
+            })
+            .then(async progress => {
+                try {
+                    const tracesArray = new Array<Path>();
+                    const fileStat = await this.fileSystem.getFileStat(this.uri.toString());
+                    progress.report({ message: 'Finding traces ', work: { done: 10, total: 100 } });
                     if (fileStat) {
                         if (fileStat.isDirectory) {
                             // Find recursivly CTF traces
@@ -111,12 +118,12 @@ export class TraceViewerWidget extends ReactWidget {
 
                     const traces = new Array<Trace>();
                     if (isCancelled.value) {
-                        progress.report({message: 'Complete', work: {done: 100, total: 100}});
+                        progress.report({ message: 'Complete', work: { done: 100, total: 100 } });
                         this.dispose();
                         return;
                     }
 
-                    progress.report({message: 'Opening traces', work: {done: 30, total: 100}});
+                    progress.report({ message: 'Opening traces', work: { done: 30, total: 100 } });
                     for (let i = 0; i < tracesArray.length; i++) {
                         if (isCancelled.value) {
                             break;
@@ -129,15 +136,15 @@ export class TraceViewerWidget extends ReactWidget {
 
                     if (isCancelled.value) {
                         // Rollback traces
-                        progress.report({message: 'Rolling back traces', work: {done: 50, total: 100}});
+                        progress.report({ message: 'Rolling back traces', work: { done: 50, total: 100 } });
                         for (let i = 0; i < traces.length; i++) {
                             await this.traceManager.closeTrace(traces[i].UUID);
                         }
-                        progress.report({message: 'Complete', work: {done: 100, total: 100}});
+                        progress.report({ message: 'Complete', work: { done: 100, total: 100 } });
                         this.dispose();
                         return;
                     }
-                    progress.report({message: 'Merging traces', work: {done: 70, total: 100}});
+                    progress.report({ message: 'Merging traces', work: { done: 70, total: 100 } });
                     const experiment = await this.experimentManager.openExperiment(this.uri.name, traces);
                     if (experiment) {
                         this.openedExperiment = experiment;
@@ -145,7 +152,7 @@ export class TraceViewerWidget extends ReactWidget {
                         this.id = experiment.UUID;
 
                         if (this.isVisible) {
-                            TraceViewerWidget.widgetActivatedEmitter.fire(experiment);
+                            this.openedTracesWidget.onWidgetActivated(experiment);
                         }
                     }
 
@@ -154,9 +161,9 @@ export class TraceViewerWidget extends ReactWidget {
                     console.log(e);
                     this.dispose();
                 }
-            progress.report({message: 'Complete', work: {done: 100, total: 100}});
-            progress.cancel();
-        });
+                progress.report({ message: 'Complete', work: { done: 100, total: 100 } });
+                progress.cancel();
+            });
     }
 
     onCloseRequest(msg: Message): void {
@@ -171,15 +178,16 @@ export class TraceViewerWidget extends ReactWidget {
     onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         if (this.openedExperiment) {
-            TraceViewerWidget.widgetActivatedEmitter.fire(this.openedExperiment);
+            this.openedTracesWidget.onWidgetActivated(this.openedExperiment);
         }
     }
 
     onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.openedExperiment) {
-            TraceViewerWidget.widgetActivatedEmitter.fire(this.openedExperiment);
+            this.openedTracesWidget.onWidgetActivated(this.openedExperiment);
         }
+        this.node.focus();
     }
 
     protected onResize(): void {

@@ -5,7 +5,6 @@ import { TraceViewerContribution } from './trace-viewer-contribution';
 import { TraceViewerEnvironment } from '../../common/trace-viewer-environment';
 import { TraceServerUrlProvider } from '../../common/trace-server-url-provider';
 import { CommandContribution } from '@theia/core/lib/common';
-
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-balham-dark.css';
 import 'ag-grid-community/dist/styles/ag-theme-balham.css';
@@ -19,15 +18,22 @@ import { TraceServerConnectionStatusService, TraceServerConnectionStatusContribu
 import { TraceServerUrlProviderImpl } from '../trace-server-url-provider-frontend-impl';
 import { bindTraceServerPreferences } from '../trace-server-bindings';
 import { TraceServerConfigService, traceServerPath } from '../../common/trace-server-config';
-export default new ContainerModule(bind => {
+import { TraceExplorerOpenedTracesWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
+import { TraceExplorerAnalysisWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-analysis-widget';
+import { TraceExplorerTooltipWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-tooltip-widget';
+import { TraceExplorerPlaceholderWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-placeholder-widget';
 
+export default new ContainerModule(bind => {
     bind(TraceViewerEnvironment).toSelf().inRequestScope();
     bind(TraceServerUrlProviderImpl).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TraceServerUrlProviderImpl);
     bind(TraceServerUrlProvider).toService(TraceServerUrlProviderImpl);
     bind(TspClientProvider).toSelf().inSingletonScope();
     bind(TheiaMessageManager).toSelf().inSingletonScope();
-
+    bind(TraceExplorerAnalysisWidget).toSelf().inSingletonScope();
+    bind(TraceExplorerOpenedTracesWidget).toSelf().inSingletonScope();
+    bind(TraceExplorerTooltipWidget).toSelf().inSingletonScope();
+    bind(TraceExplorerPlaceholderWidget).toSelf().inSingletonScope();
     bind(TraceViewerWidget).toSelf();
     bind<WidgetFactory>(WidgetFactory).toDynamicValue(context => ({
         id: TraceViewerWidget.ID,
@@ -38,12 +44,10 @@ export default new ContainerModule(bind => {
             return child.get(TraceViewerWidget);
         }
     })).inSingletonScope();
-
     bind(TraceViewerContribution).toSelf().inSingletonScope();
     [CommandContribution, OpenHandler, FrontendApplicationContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(TraceViewerContribution)
     );
-
     bindViewContribution(bind, TraceExplorerContribution);
     bind(TraceExplorerWidget).toSelf();
     bind(FrontendApplicationContribution).toService(TraceExplorerContribution);
@@ -51,19 +55,15 @@ export default new ContainerModule(bind => {
         id: TRACE_EXPLORER_ID,
         createWidget: () => context.container.get<TraceExplorerWidget>(TraceExplorerWidget)
     }));
-
     bind(TraceServerConfigService).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         return connection.createProxy<TraceServerConfigService>(traceServerPath);
     }).inSingletonScope();
-
     bind(TraceServerConnectionStatusService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TraceServerConnectionStatusService);
     bind(TraceServerConnectionStatusContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TraceServerConnectionStatusContribution);
-
     bindTraceServerPreferences(bind);
-
     // bindViewContribution(bind, TracePropertiesContribution);
     // bind(TracePropertiesWidget).toSelf();
     // bind(WidgetFactory).toDynamicValue(context => ({
