@@ -17,8 +17,8 @@ import { signalManager, Signals } from '@trace-viewer/base/lib/signal-manager';
 import { TraceViewerWidget } from '../trace-viewer/trace-viewer';
 import { TraceViewerContribution } from '../trace-viewer/trace-viewer-contribution';
 
-import {PreferenceMenus} from '../trace-context-menu-contribution';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { PreferenceMenus } from './trace-explorer-contribution';
 
 export const TRACE_EXPLORER_ID = 'trace-explorer';
 export const TRACE_EXPLORER_LABEL = 'Trace Explorer';
@@ -46,6 +46,9 @@ export class TraceExplorerWidget extends ReactWidget {
     @inject(TraceViewerContribution)
     protected readonly traceViewerContribution!: TraceViewerContribution;
 
+    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer!: ContextMenuRenderer
+
+
     private OPENED_TRACE_TITLE = 'Opened Traces';
     // private FILE_NAVIGATOR_TITLE: string = 'File navigator';
     private ANALYSIS_TITLE = 'Available Analyses';
@@ -71,7 +74,6 @@ export class TraceExplorerWidget extends ReactWidget {
     constructor(
         @inject(TspClientProvider) private tspClientProvider: TspClientProvider,
         @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         super();
         this.id = TRACE_EXPLORER_ID;
@@ -324,8 +326,8 @@ export class TraceExplorerWidget extends ReactWidget {
         this.handleShareButtonClick = this.handleShareButtonClick.bind(this);
         return <div className='trace-list-container' key={props.key} style={props.style}>
             <div className={traceContainerClassName}>
-                <div className='trace-element-info' onClick={this.onExperimentSelected.bind(this, props.index)} 
-                onContextMenu={this.handleContextMenuEvent.bind(this)}>
+                <div className='trace-element-info' onClick={this.onExperimentSelected.bind(this, props.index)}
+                    onContextMenu={this.handleContextMenuEvent.bind(this)}>
                     <div className='trace-element-name'>
                         {traceName}
                     </div>
