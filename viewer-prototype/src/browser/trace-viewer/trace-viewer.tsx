@@ -18,6 +18,7 @@ import URI from '@theia/core/lib/common/uri';
 import { TheiaMessageManager } from '../theia-message-manager';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { signalManager } from '@trace-viewer/base/lib/signal-manager';
+import { TraceExplorerOpenedTracesWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
 
 export const TraceViewerWidgetOptions = Symbol('TraceViewerWidgetOptions');
 export interface TraceViewerWidgetOptions {
@@ -61,7 +62,7 @@ export class TraceViewerWidget extends ReactWidget {
         this.title.closable = true;
         this.addClass('theia-trace-open');
         this.toDispose.push(TraceExplorerWidget.outputAddedSignal(output => this.onOutputAdded(output)));
-        this.toDispose.push(TraceExplorerWidget.experimentSelectedSignal(experiment => this.onExperimentSelected(experiment)));
+        this.toDispose.push(TraceExplorerOpenedTracesWidget.experimentSelectedSignal(experiment => this.onExperimentSelected(experiment)));
         this.backgroundTheme = ThemeService.get().getCurrentTheme().type;
         ThemeService.get().onThemeChange(() => this.updateBackgroundTheme());
         this.initialize();
@@ -85,20 +86,20 @@ export class TraceViewerWidget extends ReactWidget {
          * TODO: use backend service to find traces
          */
 
-         const isCancelled = { value: false };
+        const isCancelled = { value: false };
 
         // This will show a progress dialog with "Cancel" option
         this.messageService.showProgress({
             text: 'Open traces'
         },
-        () => {
-            isCancelled.value = true;
-        })
-        .then(async progress => {
-            try {
-                const tracesArray = new Array<Path>();
-                const fileStat = await this.fileSystem.getFileStat(this.uri.toString());
-                progress.report({message: 'Finding traces ', work: {done: 10, total: 100}});
+            () => {
+                isCancelled.value = true;
+            })
+            .then(async progress => {
+                try {
+                    const tracesArray = new Array<Path>();
+                    const fileStat = await this.fileSystem.getFileStat(this.uri.toString());
+                    progress.report({ message: 'Finding traces ', work: { done: 10, total: 100 } });
                     if (fileStat) {
                         if (fileStat.isDirectory) {
                             // Find recursivly CTF traces
@@ -111,12 +112,12 @@ export class TraceViewerWidget extends ReactWidget {
 
                     const traces = new Array<Trace>();
                     if (isCancelled.value) {
-                        progress.report({message: 'Complete', work: {done: 100, total: 100}});
+                        progress.report({ message: 'Complete', work: { done: 100, total: 100 } });
                         this.dispose();
                         return;
                     }
 
-                    progress.report({message: 'Opening traces', work: {done: 30, total: 100}});
+                    progress.report({ message: 'Opening traces', work: { done: 30, total: 100 } });
                     for (let i = 0; i < tracesArray.length; i++) {
                         if (isCancelled.value) {
                             break;
@@ -129,15 +130,15 @@ export class TraceViewerWidget extends ReactWidget {
 
                     if (isCancelled.value) {
                         // Rollback traces
-                        progress.report({message: 'Rolling back traces', work: {done: 50, total: 100}});
+                        progress.report({ message: 'Rolling back traces', work: { done: 50, total: 100 } });
                         for (let i = 0; i < traces.length; i++) {
                             await this.traceManager.closeTrace(traces[i].UUID);
                         }
-                        progress.report({message: 'Complete', work: {done: 100, total: 100}});
+                        progress.report({ message: 'Complete', work: { done: 100, total: 100 } });
                         this.dispose();
                         return;
                     }
-                    progress.report({message: 'Merging traces', work: {done: 70, total: 100}});
+                    progress.report({ message: 'Merging traces', work: { done: 70, total: 100 } });
                     const experiment = await this.experimentManager.openExperiment(this.uri.name, traces);
                     if (experiment) {
                         this.openedExperiment = experiment;
@@ -154,9 +155,9 @@ export class TraceViewerWidget extends ReactWidget {
                     console.log(e);
                     this.dispose();
                 }
-            progress.report({message: 'Complete', work: {done: 100, total: 100}});
-            progress.cancel();
-        });
+                progress.report({ message: 'Complete', work: { done: 100, total: 100 } });
+                progress.cancel();
+            });
     }
 
     onCloseRequest(msg: Message): void {

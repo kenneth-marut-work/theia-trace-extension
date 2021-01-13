@@ -12,7 +12,13 @@ export class TraceExplorerTooltipWidget extends ReactWidget {
     @inject(EditorManager) protected readonly editorManager!: EditorManager;
 
 
-    private tooltip: { [key: string]: string } = {};
+    protected _tooltip: { [key: string]: string } = {};
+    get tooltip(): { [key: string]: string } {
+        return this._tooltip;
+    }
+    set tooltip(tooltip: { [key: string]: string }) {
+        this._tooltip = tooltip;
+    }
 
     @postConstruct()
     init(): void {
@@ -24,11 +30,11 @@ export class TraceExplorerTooltipWidget extends ReactWidget {
     private renderTooltip() {
         this.handleSourcecodeLockup = this.handleSourcecodeLockup.bind(this);
         const tooltipArray: JSX.Element[] = [];
-        if (this.tooltip) {
-            const keys = Object.keys(this.tooltip);
+        if (this._tooltip) {
+            const keys = Object.keys(this._tooltip);
             keys.forEach(key => {
                 if (key === 'Source') {
-                    const sourceCodeInfo = this.tooltip[key];
+                    const sourceCodeInfo = this._tooltip[key];
                     const matches = sourceCodeInfo.match('(.*):(\\d+)');
                     let fileLocation;
                     let line;
@@ -40,7 +46,7 @@ export class TraceExplorerTooltipWidget extends ReactWidget {
                         key={key}
                         onClick={this.handleSourcecodeLockup.bind(this, fileLocation, line)}>{key + ': ' + sourceCodeInfo}</p>);
                 } else {
-                    tooltipArray.push(<p key={key}>{key + ': ' + this.tooltip[key]}</p>);
+                    tooltipArray.push(<p key={key}>{key + ': ' + this._tooltip[key]}</p>);
                 }
             });
         }

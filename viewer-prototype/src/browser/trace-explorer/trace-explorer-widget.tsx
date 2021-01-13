@@ -9,7 +9,7 @@ import { Emitter } from '@theia/core';
 import { EditorManager } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
-import { ExperimentManager } from '@trace-viewer/base/lib/experiment-manager';
+// import { ExperimentManager } from '@trace-viewer/base/lib/experiment-manager';
 import { TspClientProvider } from '../tsp-client-provider';
 import { signalManager, Signals } from '@trace-viewer/base/lib/signal-manager';
 /* FIXME: This may cause Circular dependency between trace-viewer and trace-explorer-widget */
@@ -47,27 +47,27 @@ export class TraceExplorerWidget extends BaseWidget {
     @inject(TraceViewerContribution)
     protected readonly traceViewerContribution!: TraceViewerContribution;
 
-    private OPENED_TRACE_TITLE = 'Opened Traces';
+    // private OPENED_TRACE_TITLE = 'Opened Traces';
     // private FILE_NAVIGATOR_TITLE: string = 'File navigator';
-    private ANALYSIS_TITLE = 'Available Analysis';
+    // private ANALYSIS_TITLE = 'Available Analysis';
 
     private openedExperiments: Array<Experiment> = [];
-    private selectedExperimentIndex = 0;
-    private lastSelectedOutputIndex = -1;
-    private availableOutputDescriptors: Map<string, OutputDescriptor[]> = new Map();
+    // private selectedExperimentIndex = 0;
+    // private lastSelectedOutputIndex = -1;
+    // private availableOutputDescriptors: Map<string, OutputDescriptor[]> = new Map();
 
-    private showShareDialog = false;
-    private sharingLink = '';
+    // private showShareDialog = false;
+    // private sharingLink = '';
 
     // private tooltip: { [key: string]: string } = {};
-    private selectedExperiment: Experiment | undefined;
-    private experimentManager: ExperimentManager;
+    // private selectedExperiment: Experiment | undefined;
+    // private experimentManager: ExperimentManager;
 
     private static outputAddedEmitter = new Emitter<OutputAddedSignalPayload>();
     public static outputAddedSignal = TraceExplorerWidget.outputAddedEmitter.event;
 
-    private static experimentSelectedEmitter = new Emitter<Experiment>();
-    public static experimentSelectedSignal = TraceExplorerWidget.experimentSelectedEmitter.event;
+    // private static experimentSelectedEmitter = new Emitter<Experiment>();
+    // public static experimentSelectedSignal = TraceExplorerWidget.experimentSelectedEmitter.event;
 
     protected viewContainer!: ViewContainer;
 
@@ -88,29 +88,38 @@ export class TraceExplorerWidget extends BaseWidget {
     @inject(TraceExplorerAnalysisWidget) protected readonly analysisWidget!: TraceExplorerAnalysisWidget;
     @inject(TraceExplorerOpenedTracesWidget) protected readonly openedTracesWidget!: TraceExplorerOpenedTracesWidget;
     @inject(TraceExplorerTooltipWidget) protected readonly tooltipWidget!: TraceExplorerTooltipWidget;
+    @inject(ViewContainer.Factory) protected readonly viewContainerFactory!: ViewContainer.Factory;
 
-    constructor(
-        @inject(TspClientProvider) private tspClientProvider: TspClientProvider,
-        @inject(ViewContainer.Factory) protected readonly viewContainerFactory: ViewContainer.Factory,
-    ) {
-        super();
+    // constructor(
+    // ) {
+    // super();
+    // this.id = TRACE_EXPLORER_ID;
+    // this.title.label = TRACE_EXPLORER_LABEL;
+    // this.title.caption = TRACE_EXPLORER_LABEL;
+    // this.title.iconClass = 'trace-explorer-tab-icon';
+    // this.experimentManager = this.tspClientProvider.getExperimentManager();
+    // signalManager().on(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
+    // signalManager().on(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
+    // signalManager().on(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
+    // signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
+    // this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.onWidgetActivated(experiment)));
+    // this.tspClientProvider.addTspClientChangeListener(tspClient => {
+    //     this.experimentManager = this.tspClientProvider.getExperimentManager();
+    // });
+    // }
+
+    @postConstruct()
+    init(): void {
         this.id = TRACE_EXPLORER_ID;
         this.title.label = TRACE_EXPLORER_LABEL;
         this.title.caption = TRACE_EXPLORER_LABEL;
         this.title.iconClass = 'trace-explorer-tab-icon';
-        this.experimentManager = this.tspClientProvider.getExperimentManager();
         signalManager().on(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
         signalManager().on(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
         signalManager().on(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
         signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
         this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.onWidgetActivated(experiment)));
-        this.tspClientProvider.addTspClientChangeListener(tspClient => {
-            this.experimentManager = this.tspClientProvider.getExperimentManager();
-        });
-    }
 
-    @postConstruct()
-    init(): void {
         this.viewContainer = this.viewContainerFactory({
             id: this.id
         });
@@ -137,13 +146,13 @@ export class TraceExplorerWidget extends BaseWidget {
     }
 
     private onExperimentClosed(_closedExperiment: Experiment) {
-        this.tooltip = {};
+        this.tooltipWidget.tooltip = {};
         this.updateOpenedExperiments();
         this.updateAvailableAnalysis(undefined);
     }
 
     private onTooltip(tooltip: { [key: string]: string }) {
-        this.tooltip = tooltip;
+        this.tooltipWidget.tooltip = tooltip;
         this.update();
     }
 
@@ -189,7 +198,7 @@ export class TraceExplorerWidget extends BaseWidget {
                             rowRenderer={this.experimentRowRenderer} />
                     </div>
                 </div> */}
-                <div className='trace-explorer-analysis'>
+                {/* <div className='trace-explorer-analysis'>
                     <div className='trace-explorer-panel-title'>
                         {this.ANALYSIS_TITLE}
                     </div>
@@ -201,7 +210,7 @@ export class TraceExplorerWidget extends BaseWidget {
                             rowHeight={50}
                             rowRenderer={this.outputsRowRenderer} />
                     </div>
-                </div>
+                </div> */}
                 {/* <div className='trace-explorer-tooltip'>
                     <div className='trace-explorer-panel-title'>
                         {'Time Graph Tooltip'}
@@ -292,14 +301,14 @@ export class TraceExplorerWidget extends BaseWidget {
     // }
 
     private renderSharingModal() {
-        if (this.sharingLink.length) {
+        if (this.openedTracesWidget.sharingLink.length) {
             return <div className='sharing-container'>
                 <div className='sharing-description'>
                     {'Copy URL to share your trace context'}
                 </div>
                 <div className='sharing-link-info'>
                     <div className='sharing-link'>
-                        <textarea rows={1} cols={this.sharingLink.length} readOnly={true} value={this.sharingLink} />
+                        <textarea rows={1} cols={this.openedTracesWidget.sharingLink.length} readOnly={true} value={this.sharingLink} />
                     </div>
                     <div className='sharing-link-copy'>
                         <button className='copy-link-button'>
@@ -314,72 +323,72 @@ export class TraceExplorerWidget extends BaseWidget {
         </div>;
     }
 
-    private experimentRowRenderer(props: ListRowProps): React.ReactNode {
-        let traceName = '';
-        let tracePath = '';
-        if (this.openedExperiments && this.openedExperiments.length && props.index < this.openedExperiments.length) {
-            traceName = this.openedExperiments[props.index].name;
-            // tracePath = this.openedTraces[props.index].path;
-            /*
-                TODO: Implement better visualization of experiment, e.g. a tree
-                with experiment name as root and traces (name and path) as children
-             */
-            let prefix = '> ';
-            for (let i = 0; i < this.openedExperiments[props.index].traces.length; i++) {
-                // tracePath = tracePath.concat(prefix).concat(this.openedExperiments[props.index].traces[i].path);
-                tracePath = tracePath.concat(prefix).concat(this.openedExperiments[props.index].traces[i].name);
-                prefix = '\n> ';
-            }
-        }
-        let traceContainerClassName = 'trace-element-container';
-        if (props.index === this.selectedExperimentIndex) {
-            traceContainerClassName = traceContainerClassName + ' theia-mod-selected';
-        }
-        this.handleShareButtonClick = this.handleShareButtonClick.bind(this);
-        return <div className='trace-list-container' key={props.key} style={props.style}>
-            <div className={traceContainerClassName}>
-                <div className='trace-element-info' onClick={this.onExperimentSelected.bind(this, props.index)}>
-                    <div className='trace-element-name'>
-                        {traceName}
-                    </div>
-                    <div className='trace-element-path'>
-                        {tracePath}
-                    </div>
-                </div>
-                {/* <div className='trace-element-options'>
-                    <button className='share-context-button' onClick={this.handleShareButtonClick.bind(this, props.index)}>
-                        <FontAwesomeIcon icon={faShareSquare} />
-                    </button>
-                </div> */}
-            </div>
-        </div>;
-    }
+    // private experimentRowRenderer(props: ListRowProps): React.ReactNode {
+    //     let traceName = '';
+    //     let tracePath = '';
+    //     if (this.openedExperiments && this.openedExperiments.length && props.index < this.openedExperiments.length) {
+    //         traceName = this.openedExperiments[props.index].name;
+    //         // tracePath = this.openedTraces[props.index].path;
+    //         /*
+    //             TODO: Implement better visualization of experiment, e.g. a tree
+    //             with experiment name as root and traces (name and path) as children
+    //          */
+    //         let prefix = '> ';
+    //         for (let i = 0; i < this.openedExperiments[props.index].traces.length; i++) {
+    //             // tracePath = tracePath.concat(prefix).concat(this.openedExperiments[props.index].traces[i].path);
+    //             tracePath = tracePath.concat(prefix).concat(this.openedExperiments[props.index].traces[i].name);
+    //             prefix = '\n> ';
+    //         }
+    //     }
+    //     let traceContainerClassName = 'trace-element-container';
+    //     if (props.index === this.selectedExperimentIndex) {
+    //         traceContainerClassName = traceContainerClassName + ' theia-mod-selected';
+    //     }
+    //     this.handleShareButtonClick = this.handleShareButtonClick.bind(this);
+    //     return <div className='trace-list-container' key={props.key} style={props.style}>
+    //         <div className={traceContainerClassName}>
+    //             <div className='trace-element-info' onClick={this.onExperimentSelected.bind(this, props.index)}>
+    //                 <div className='trace-element-name'>
+    //                     {traceName}
+    //                 </div>
+    //                 <div className='trace-element-path'>
+    //                     {tracePath}
+    //                 </div>
+    //             </div>
+    //             {/* <div className='trace-element-options'>
+    //                 <button className='share-context-button' onClick={this.handleShareButtonClick.bind(this, props.index)}>
+    //                     <FontAwesomeIcon icon={faShareSquare} />
+    //                 </button>
+    //             </div> */}
+    //         </div>
+    //     </div>;
+    // }
 
-    private onWidgetActivated(experiment: Experiment) {
-        this.selectedExperiment = experiment;
-        const selectedIndex = this.openedExperiments.findIndex(openedExperiment => openedExperiment.UUID === experiment.UUID);
-        this.selectExperiment(selectedIndex);
-    }
+    // private onWidgetActivated(experiment: Experiment) {
+    //     this.selectedExperiment = experiment;
+    //     const selectedIndex = this.openedExperiments.findIndex(openedExperiment => openedExperiment.UUID === experiment.UUID);
+    //     this.selectExperiment(selectedIndex);
+    // }
 
-    private onExperimentSelected(index: number) {
-        TraceExplorerWidget.experimentSelectedEmitter.fire(this.openedExperiments[index]);
-        this.selectExperiment(index);
-    }
+    // private onExperimentSelected(index: number) {
+    //     TraceExplorerWidget.experimentSelectedEmitter.fire(this.openedExperiments[index]);
+    //     this.selectExperiment(index);
+    // }
 
-    private selectExperiment(index: number) {
-        if (index >= 0 && index !== this.selectedExperimentIndex) {
-            this.selectedExperimentIndex = index;
-            this.lastSelectedOutputIndex = -1;
-            this.updateAvailableAnalysis(this.openedExperiments[index]);
-        }
-    }
+    // private selectExperiment(index: number) {
+    //     if (index >= 0 && index !== this.selectedExperimentIndex) {
+    //         this.selectedExperimentIndex = index;
+    //         this.lastSelectedOutputIndex = -1;
+    //         this.updateAvailableAnalysis(this.openedExperiments[index]);
+    //     }
+    // }
 
-    private handleShareButtonClick(index: number) {
-        const traceToShare = this.openedExperiments[index];
-        this.sharingLink = 'https://localhost:3000/share/trace?' + traceToShare.UUID;
-        this.showShareDialog = true;
-        this.update();
-    }
+    // private handleShareButtonClick(index: number) {
+    //     const traceToShare = this.openedExperiments[index];
+    //     this.sharingLink = 'https://localhost:3000/share/trace?' + traceToShare.UUID;
+    //     this.showShareDialog = true;
+    //     this.update();
+    // }
 
     private handleShareModalClose() {
         this.showShareDialog = false;
@@ -387,30 +396,30 @@ export class TraceExplorerWidget extends BaseWidget {
         this.update();
     }
 
-    private outputsRowRenderer(props: ListRowProps): React.ReactNode {
-        let outputName = '';
-        let outputDescription = '';
-        const selectedTrace = this.openedExperiments[this.selectedExperimentIndex];
-        if (selectedTrace) {
-            const outputDescriptors = this.availableOutputDescriptors.get(selectedTrace.UUID);
-            if (outputDescriptors && outputDescriptors.length && props.index < outputDescriptors.length) {
-                outputName = outputDescriptors[props.index].name;
-                outputDescription = outputDescriptors[props.index].description;
-            }
-        }
-        let traceContainerClassName = 'outputs-list-container';
-        if (props.index === this.lastSelectedOutputIndex) {
-            traceContainerClassName = traceContainerClassName + ' theia-mod-selected';
-        }
-        return <div className={traceContainerClassName} key={props.key} style={props.style} onClick={this.outputClicked.bind(this, props.index)}>
-            <div className='outputs-element-name'>
-                {outputName}
-            </div>
-            <div className='outputs-element-description'>
-                {outputDescription}
-            </div>
-        </div>;
-    }
+    // private outputsRowRenderer(props: ListRowProps): React.ReactNode {
+    //     let outputName = '';
+    //     let outputDescription = '';
+    //     const selectedTrace = this.openedExperiments[this.selectedExperimentIndex];
+    //     if (selectedTrace) {
+    //         const outputDescriptors = this.availableOutputDescriptors.get(selectedTrace.UUID);
+    //         if (outputDescriptors && outputDescriptors.length && props.index < outputDescriptors.length) {
+    //             outputName = outputDescriptors[props.index].name;
+    //             outputDescription = outputDescriptors[props.index].description;
+    //         }
+    //     }
+    //     let traceContainerClassName = 'outputs-list-container';
+    //     if (props.index === this.lastSelectedOutputIndex) {
+    //         traceContainerClassName = traceContainerClassName + ' theia-mod-selected';
+    //     }
+    //     return <div className={traceContainerClassName} key={props.key} style={props.style} onClick={this.outputClicked.bind(this, props.index)}>
+    //         <div className='outputs-element-name'>
+    //             {outputName}
+    //         </div>
+    //         <div className='outputs-element-description'>
+    //             {outputDescription}
+    //         </div>
+    //     </div>;
+    // }
 
     private outputClicked(index: number) {
         this.lastSelectedOutputIndex = index;
@@ -422,33 +431,33 @@ export class TraceExplorerWidget extends BaseWidget {
         this.update();
     }
 
-    private async updateOpenedExperiments() {
-        this.openedExperiments = await this.experimentManager.getOpenedExperiments();
-        const selectedIndex = this.openedExperiments.findIndex(experiment => this.selectedExperiment &&
-            experiment.UUID === this.selectedExperiment.UUID);
-        this.selectedExperimentIndex = selectedIndex !== -1 ? selectedIndex : 0;
-        this.update();
-    }
+    // private async updateOpenedExperiments() {
+    //     this.openedExperiments = await this.experimentManager.getOpenedExperiments();
+    //     const selectedIndex = this.openedExperiments.findIndex(experiment => this.selectedExperiment &&
+    //         experiment.UUID === this.selectedExperiment.UUID);
+    //     this.selectedExperimentIndex = selectedIndex !== -1 ? selectedIndex : 0;
+    //     this.update();
+    // }
 
-    private async updateAvailableAnalysis(experiment: Experiment | undefined) {
-        if (experiment) {
-            const outputs = await this.getOutputDescriptors(experiment);
-            this.availableOutputDescriptors.set(experiment.UUID, outputs);
-        } else {
-            if (this.openedExperiments.length) {
-                const outputs = await this.getOutputDescriptors(this.openedExperiments[0]);
-                this.availableOutputDescriptors.set(this.openedExperiments[0].UUID, outputs);
-            }
-        }
-        this.update();
-    }
+    // private async updateAvailableAnalysis(experiment: Experiment | undefined) {
+    //     if (experiment) {
+    //         const outputs = await this.getOutputDescriptors(experiment);
+    //         this.availableOutputDescriptors.set(experiment.UUID, outputs);
+    //     } else {
+    //         if (this.openedExperiments.length) {
+    //             const outputs = await this.getOutputDescriptors(this.openedExperiments[0]);
+    //             this.availableOutputDescriptors.set(this.openedExperiments[0].UUID, outputs);
+    //         }
+    //     }
+    //     this.update();
+    // }
 
-    private async getOutputDescriptors(experiment: Experiment): Promise<OutputDescriptor[]> {
-        const outputDescriptors: OutputDescriptor[] = [];
-        const descriptors = await this.experimentManager.getAvailableOutputs(experiment.UUID);
-        if (descriptors && descriptors.length) {
-            outputDescriptors.push(...descriptors);
-        }
-        return outputDescriptors;
-    }
+    // private async getOutputDescriptors(experiment: Experiment): Promise<OutputDescriptor[]> {
+    //     const outputDescriptors: OutputDescriptor[] = [];
+    //     const descriptors = await this.experimentManager.getAvailableOutputs(experiment.UUID);
+    //     if (descriptors && descriptors.length) {
+    //         outputDescriptors.push(...descriptors);
+    //     }
+    //     return outputDescriptors;
+    // }
 }
