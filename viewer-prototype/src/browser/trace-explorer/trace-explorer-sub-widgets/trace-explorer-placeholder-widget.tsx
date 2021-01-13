@@ -1,14 +1,15 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import { ReactWidget } from "@theia/core/lib/browser";
 import * as React from 'react';
-import { TraceViewerContribution } from '../../trace-viewer/trace-viewer-contribution';
+import { CommandService } from '@theia/core';
+import { OpenTraceCommand } from '../../trace-viewer/trace-viewer-commands';
 
 @injectable()
 export class TraceExplorerPlaceholderWidget extends ReactWidget {
     static ID = 'trace-explorer-placeholder-widget';
     static LABEL = 'Trace Exploerer Placeholder Widget';
 
-    @inject(TraceViewerContribution) protected readonly traceViewerContribution!: TraceViewerContribution;
+    @inject(CommandService) protected readonly commandService!: CommandService;
 
     @postConstruct()
     init(): void {
@@ -30,6 +31,6 @@ export class TraceExplorerPlaceholderWidget extends ReactWidget {
     }
 
     private async handleOpenTrace() {
-        this.traceViewerContribution.openDialog();
+        this.commandService.executeCommand(OpenTraceCommand.id);
     }
 }

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { List, ListRowProps } from 'react-virtualized';
 import { TraceExplorerOpenedTracesWidget } from './trace-explorer-opened-traces-widget';
 import { Emitter } from '@theia/core';
-import { OutputAddedSignalPayload } from '../trace-explorer-widget';
+import { OutputAddedSignalPayload } from '../output-added-signal-payload';
 
 @injectable()
 export class TraceExplorerAnalysisWidget extends ReactWidget {

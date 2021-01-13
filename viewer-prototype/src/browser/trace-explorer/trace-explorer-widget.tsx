@@ -1,14 +1,14 @@
 import { injectable, inject,  postConstruct } from 'inversify';
 // import * as React from 'react';
 // import { List, ListRowProps } from 'react-virtualized';
-import { OutputDescriptor } from 'tsp-typescript-client/lib/models/output-descriptor';
+// import { OutputDescriptor } from 'tsp-typescript-client/lib/models/output-descriptor';
 // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 // import { /* faShareSquare, */ faCopy } from '@fortawesome/free-solid-svg-icons';
 // import ReactModal from 'react-modal';
 // import { Emitter } from '@theia/core';
 // import { EditorManager } from '@theia/editor/lib/browser';
 // import URI from '@theia/core/lib/common/uri';
-import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
+// import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
 // import { ExperimentManager } from '@trace-viewer/base/lib/experiment-manager';
 // import { TspClientProvider } from '../tsp-client-provider';
 import { signalManager, Signals } from '@trace-viewer/base/lib/signal-manager';
@@ -24,23 +24,6 @@ import { TraceExplorerPlaceholderWidget } from './trace-explorer-sub-widgets/tra
 export const TRACE_EXPLORER_LABEL = 'Trace Explorer';
 export const TRACE_EXPLORER_ID = 'trace-explorer';
 
-export class OutputAddedSignalPayload {
-    private outputDescriptor: OutputDescriptor;
-    private experiment: Experiment;
-
-    constructor(outputDescriptor: OutputDescriptor, trace: Experiment) {
-        this.outputDescriptor = outputDescriptor;
-        this.experiment = trace;
-    }
-
-    public getOutputDescriptor(): OutputDescriptor {
-        return this.outputDescriptor;
-    }
-
-    public getExperiment(): Experiment {
-        return this.experiment;
-    }
-}
 
 @injectable()
 // export class TraceExplorerWidget extends ReactWidget {
