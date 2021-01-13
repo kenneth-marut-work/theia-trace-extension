@@ -1,12 +1,15 @@
-import { injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { ReactWidget } from "@theia/core/lib/browser";
 import * as React from 'react';
-import { List } from 'react-virtualized';
+import { List, ListRowProps } from 'react-virtualized';
+import { TraceExplorerOpenedTracesWidget } from './trace-explorer-opened-traces-widget';
 
 @injectable()
 export class TraceExplorerAnalysisWidget extends ReactWidget {
     static ID = 'trace-explorer-analysis-widget';
     static LABEL = 'Available Analysis';
+
+    @inject(TraceExplorerOpenedTracesWidget) protected readonly openedTracesWidget!: TraceExplorerOpenedTracesWidget;
 
     @postConstruct()
     init(): void {
@@ -33,10 +36,11 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
         );
     }
 
-    private outputsRowRenderer(props: ListRowProps): React.ReactNode {
+    private outputsRowRenderer = (props: ListRowProps): React.ReactNode => {
         let outputName = '';
         let outputDescription = '';
-        const selectedTrace = this.openedExperiments[this.selectedExperimentIndex];
+        const { openedExperiments, availableOutputDescriptors, selectedExperimentIndex } = this.openedTracesWidget;
+        const selectedTrace = this.openedTracesWidget.openedExperiments[this.openedTracesWidget.selectedExperimentIndex];
         if (selectedTrace) {
             const outputDescriptors = this.availableOutputDescriptors.get(selectedTrace.UUID);
             if (outputDescriptors && outputDescriptors.length && props.index < outputDescriptors.length) {
@@ -56,5 +60,15 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
                 {outputDescription}
             </div>
         </div>;
+    }
+
+    private outputClicked(index: number) {
+        this.lastSelectedOutputIndex = index;
+        const trace = this.openedExperiments[this.selectedExperimentIndex];
+        const outputs = this.availableOutputDescriptors.get(trace.UUID);
+        if (outputs) {
+            TraceExplorerWidget.outputAddedEmitter.fire(new OutputAddedSignalPayload(outputs[index], trace));
+        }
+        this.update();
     }
 }
