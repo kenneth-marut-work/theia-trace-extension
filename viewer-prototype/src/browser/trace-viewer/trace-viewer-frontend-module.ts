@@ -1,5 +1,5 @@
 import { ContainerModule, Container } from 'inversify';
-import { WidgetFactory, OpenHandler, FrontendApplicationContribution, bindViewContribution, Widget } from '@theia/core/lib/browser';
+import { WidgetFactory, OpenHandler, FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
 import { TraceViewerWidget, TraceViewerWidgetOptions } from './trace-viewer';
 import { TraceViewerContribution } from './trace-viewer-contribution';
 import { TraceViewerEnvironment } from '../../common/trace-viewer-environment';
@@ -18,17 +18,26 @@ import { TspClientProvider } from '../tsp-client-provider';
 import { TheiaMessageManager } from '../theia-message-manager';
 import { TraceServerConnectionStatusService, TraceServerConnectionStatusContribution } from '../../browser/trace-server-status';
 import { TraceServerUrlProviderImpl } from '../trace-server-url-provider-frontend-impl';
+import { TraceExplorerOpenedTracesWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
+import { TraceExplorerAnalysisWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-analysis-widget';
+import { TraceExplorerTooltipWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-tooltip-widget';
+import { TraceExplorerPlaceholderWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-placeholder-widget';
 // import { TracePropertiesContribution } from '../trace-properties-view/trace-properties-view-contribution';
 // import { TracePropertiesWidget, TRACE_PROPERTIES_ID } from '../trace-properties-view/trace-properties-view-widget';
 
 export default new ContainerModule(bind => {
-
+    
     bind(TraceViewerEnvironment).toSelf().inRequestScope();
     bind(TraceServerUrlProviderImpl).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TraceServerUrlProviderImpl);
     bind(TraceServerUrlProvider).toService(TraceServerUrlProviderImpl);
     bind(TspClientProvider).toSelf().inSingletonScope();
     bind(TheiaMessageManager).toSelf().inSingletonScope();
+    
+    bind(TraceExplorerAnalysisWidget).toSelf().inSingletonScope();
+    bind(TraceExplorerOpenedTracesWidget).toSelf().inSingletonScope();
+    bind(TraceExplorerTooltipWidget).toSelf().inSingletonScope();
+    bind(TraceExplorerPlaceholderWidget).toSelf().inSingletonScope();
 
     bind(TraceViewerWidget).toSelf();
     bind<WidgetFactory>(WidgetFactory).toDynamicValue(context => ({
@@ -39,7 +48,7 @@ export default new ContainerModule(bind => {
             child.bind(TraceViewerWidgetOptions).toConstantValue(options);
             return child.get(TraceViewerWidget);
         }
-    })).inSingletonScope();
+    }));
 
     bind(TraceViewerContribution).toSelf().inSingletonScope();
     [CommandContribution, OpenHandler, FrontendApplicationContribution].forEach(serviceIdentifier =>
@@ -49,15 +58,18 @@ export default new ContainerModule(bind => {
     bindViewContribution(bind, TraceExplorerContribution);
     bind(TraceExplorerWidget).toSelf();
     bind(FrontendApplicationContribution).toService(TraceExplorerContribution);
-    // bind(WidgetFactory).toDynamicValue(context => ({
-    //     id: TRACE_EXPLORER_ID,
-    //     createWidget: () => context.container.get<TraceExplorerWidget>(TraceExplorerWidget)
-    // }));
-
     bind(WidgetFactory).toDynamicValue(context => ({
         id: TRACE_EXPLORER_ID,
-        createWidget: (): TraceExplorerWidget => TraceExplorerWidget.createWidget(context.container)
-    })).inSingletonScope();
+        createWidget: () => context.container.get<TraceExplorerWidget>(TraceExplorerWidget)
+    }));
+
+    // bind(WidgetFactory).toDynamicValue(context => ({
+    //     id: TRACE_EXPLORER_ID,
+    //     // createWidget: (): TraceExplorerWidget => TraceExplorerWidget.createWidget(context.container)
+    //     createWidget: (): () => context.
+    // })).inSingletonScope();
+
+    // bind(TraceExplorerWidget).toSelf().inSingletonScope();
 
     bind(TraceServerConnectionStatusService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TraceServerConnectionStatusService);

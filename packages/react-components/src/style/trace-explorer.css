@@ -4,13 +4,13 @@
 }
 
 /* Main container */
-.trace-explorer-container {
-    display: grid;
-    grid-template-columns: 100%;
-    grid-template-rows: 1fr 1fr; /*1fr*/
-    grid-row-gap: 10px;
-    color: var(--theia-ui-font-color0);
-}
+/* .trace-explorer-container { */
+    /* display: grid; */
+    /* grid-template-columns: 100%; */
+    /* grid-template-rows: 1fr 1fr; 1fr */
+    /* grid-row-gap: 10px; */
+    /* color: var(--theia-ui-font-color0); */
+/* } */
 
 .trace-explorer-opened {
     grid-row-start: 1;

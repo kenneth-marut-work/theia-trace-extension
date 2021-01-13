@@ -1,24 +1,25 @@
-import { injectable, inject, interfaces, Container, postConstruct } from 'inversify';
-import * as React from 'react';
-import { List, ListRowProps } from 'react-virtualized';
+import { injectable, inject,  postConstruct } from 'inversify';
+// import * as React from 'react';
+// import { List, ListRowProps } from 'react-virtualized';
 import { OutputDescriptor } from 'tsp-typescript-client/lib/models/output-descriptor';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { /* faShareSquare, */ faCopy } from '@fortawesome/free-solid-svg-icons';
-import ReactModal from 'react-modal';
-import { Emitter } from '@theia/core';
-import { EditorManager } from '@theia/editor/lib/browser';
-import URI from '@theia/core/lib/common/uri';
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+// import { /* faShareSquare, */ faCopy } from '@fortawesome/free-solid-svg-icons';
+// import ReactModal from 'react-modal';
+// import { Emitter } from '@theia/core';
+// import { EditorManager } from '@theia/editor/lib/browser';
+// import URI from '@theia/core/lib/common/uri';
 import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
 // import { ExperimentManager } from '@trace-viewer/base/lib/experiment-manager';
-import { TspClientProvider } from '../tsp-client-provider';
+// import { TspClientProvider } from '../tsp-client-provider';
 import { signalManager, Signals } from '@trace-viewer/base/lib/signal-manager';
 /* FIXME: This may cause Circular dependency between trace-viewer and trace-explorer-widget */
-import { TraceViewerWidget } from '../trace-viewer/trace-viewer';
-import { TraceViewerContribution } from '../trace-viewer/trace-viewer-contribution';
+// import { TraceViewerWidget } from '../trace-viewer/trace-viewer';
+// import { TraceViewerContribution } from '../trace-viewer/trace-viewer-contribution';
 import { TraceExplorerAnalysisWidget } from './trace-explorer-sub-widgets/trace-explorer-analysis-widget';
-import { ViewContainer, PanelLayout, BaseWidget } from '@theia/core/lib/browser';
+import { ViewContainer, PanelLayout, BaseWidget, Message } from '@theia/core/lib/browser';
 import { TraceExplorerTooltipWidget } from './trace-explorer-sub-widgets/trace-explorer-tooltip-widget';
 import { TraceExplorerOpenedTracesWidget } from './trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
+import { TraceExplorerPlaceholderWidget } from './trace-explorer-sub-widgets/trace-explorer-placeholder-widget';
 
 export const TRACE_EXPLORER_LABEL = 'Trace Explorer';
 export const TRACE_EXPLORER_ID = 'trace-explorer';
@@ -44,8 +45,8 @@ export class OutputAddedSignalPayload {
 @injectable()
 // export class TraceExplorerWidget extends ReactWidget {
 export class TraceExplorerWidget extends BaseWidget {
-    @inject(TraceViewerContribution)
-    protected readonly traceViewerContribution!: TraceViewerContribution;
+    // @inject(TraceViewerContribution)
+    // protected readonly traceViewerContribution!: TraceViewerContribution;
 
     // private OPENED_TRACE_TITLE = 'Opened Traces';
     // private FILE_NAVIGATOR_TITLE: string = 'File navigator';
@@ -63,31 +64,33 @@ export class TraceExplorerWidget extends BaseWidget {
     // private selectedExperiment: Experiment | undefined;
     // private experimentManager: ExperimentManager;
 
-    private static outputAddedEmitter = new Emitter<OutputAddedSignalPayload>();
-    public static outputAddedSignal = TraceExplorerWidget.outputAddedEmitter.event;
+    // private static outputAddedEmitter = new Emitter<OutputAddedSignalPayload>();
+    // public static outputAddedSignal = TraceExplorerWidget.outputAddedEmitter.event;
 
     // private static experimentSelectedEmitter = new Emitter<Experiment>();
     // public static experimentSelectedSignal = TraceExplorerWidget.experimentSelectedEmitter.event;
 
-    protected viewContainer!: ViewContainer;
+    protected traceViewsContainer!: ViewContainer;
 
-    static createContainer(parent: interfaces.Container): Container {
-        const child = new Container({ defaultScope: 'Singleton' });
-        child.parent = parent;
-        child.bind(TraceExplorerOpenedTracesWidget).toSelf().inSingletonScope();
-        child.bind(TraceExplorerAnalysisWidget).toSelf().inSingletonScope();
-        child.bind(TraceExplorerTooltipWidget).toSelf().inSingletonScope();
-        child.bind(TraceExplorerWidget).toSelf().inSingletonScope();
-        return child;
-    }
+    // static createContainer(parent: interfaces.Container): Container {
+    //     const child = new Container({ defaultScope: 'Singleton' });
+    //     child.parent = parent;
+    //     child.bind(TraceExplorerOpenedTracesWidget).toSelf().inSingletonScope();
+    //     child.bind(TraceExplorerAnalysisWidget).toSelf().inSingletonScope();
+    //     child.bind(TraceExplorerTooltipWidget).toSelf().inSingletonScope();
+    //     child.bind(TraceExplorerPlaceholderWidget).toSelf().inSingletonScope();
+    //     child.bind(TraceExplorerWidget).toSelf().inSingletonScope();
+    //     return child;
+    // }
 
-    static createWidget(parent: interfaces.Container): TraceExplorerWidget {
-        return TraceExplorerWidget.createContainer(parent).get(TraceExplorerWidget);
-    }
+    // static createWidget(parent: interfaces.Container): TraceExplorerWidget {
+    //     return TraceExplorerWidget.createContainer(parent).get(TraceExplorerWidget);
+    // }
 
     @inject(TraceExplorerAnalysisWidget) protected readonly analysisWidget!: TraceExplorerAnalysisWidget;
     @inject(TraceExplorerOpenedTracesWidget) protected readonly openedTracesWidget!: TraceExplorerOpenedTracesWidget;
     @inject(TraceExplorerTooltipWidget) protected readonly tooltipWidget!: TraceExplorerTooltipWidget;
+    @inject(TraceExplorerPlaceholderWidget) protected readonly placeholderWidget!: TraceExplorerPlaceholderWidget;
     @inject(ViewContainer.Factory) protected readonly viewContainerFactory!: ViewContainer.Factory;
 
     // constructor(
@@ -118,17 +121,21 @@ export class TraceExplorerWidget extends BaseWidget {
         // signalManager().on(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
         // signalManager().on(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
         signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
-        this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.onWidgetActivated(experiment)));
+        // this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.openedTracesWidget.onWidgetActivated(experiment)));
 
-        this.viewContainer = this.viewContainerFactory({
+        this.toDispose.push(this.openedTracesWidget.widgetWasUpdated(() => this.update()));
+
+        this.traceViewsContainer = this.viewContainerFactory({
             id: this.id
         });
-        this.viewContainer.addWidget(this.openedTracesWidget);
-        this.viewContainer.addWidget(this.analysisWidget);
-        this.viewContainer.addWidget(this.tooltipWidget);
-        this.toDispose.push(this.viewContainer);
+        this.traceViewsContainer.addWidget(this.openedTracesWidget);
+        this.traceViewsContainer.addWidget(this.analysisWidget);
+        this.traceViewsContainer.addWidget(this.tooltipWidget);
+        this.toDispose.push(this.traceViewsContainer);
         const layout = this.layout = new PanelLayout();
-        layout.addWidget(this.viewContainer);
+        layout.addWidget(this.placeholderWidget);
+        layout.addWidget(this.traceViewsContainer);
+        this.update();
         // this.initialize();
     }
 
@@ -161,75 +168,85 @@ export class TraceExplorerWidget extends BaseWidget {
     //     this.updateAvailableAnalysis(undefined);
     // }
 
-    private async handleOpenTrace() {
-        this.traceViewerContribution.openDialog();
-    }
-
-    protected render(): React.ReactNode {
-        // this.updateOpenedExperiments = this.updateOpenedExperiments.bind(this);
-        // this.updateAvailableAnalysis = this.updateAvailableAnalysis.bind(this);
-        // this.experimentRowRenderer = this.experimentRowRenderer.bind(this);
-        // this.outputsRowRenderer = this.outputsRowRenderer.bind(this);
-        // this.handleShareModalClose = this.handleShareModalClose.bind(this);
-        this.handleOpenTrace = this.handleOpenTrace.bind(this);
-
-        let outputsRowCount = 0;
-        if (this.openedExperiments.length) {
-            const outputs = this.availableOutputDescriptors.get(this.openedExperiments[this.selectedExperimentIndex].UUID);
-            if (outputs) {
-                outputsRowCount = outputs.length;
-            }
-
-            return <div className='trace-explorer-container'>
-                <ReactModal isOpen={this.openedTracesWidget.showShareDialog} onRequestClose={this.handleShareModalClose}
-                    ariaHideApp={false} className='sharing-modal' overlayClassName='sharing-overlay'>
-                    {this.renderSharingModal()}
-                </ReactModal>
-                {/* <div className='trace-explorer-opened'>
-                    <div className='trace-explorer-panel-title' onClick={this.updateOpenedExperiments}>
-                        {this.OPENED_TRACE_TITLE}
-                    </div>
-                    <div className='trace-explorer-panel-content'>
-                        <List
-                            height={300}
-                            width={300}
-                            rowCount={this.openedExperiments.length}
-                            rowHeight={50}
-                            rowRenderer={this.experimentRowRenderer} />
-                    </div>
-                </div> */}
-                {/* <div className='trace-explorer-analysis'>
-                    <div className='trace-explorer-panel-title'>
-                        {this.ANALYSIS_TITLE}
-                    </div>
-                    <div className='trace-explorer-panel-content'>
-                        <List
-                            height={300}
-                            width={300}
-                            rowCount={outputsRowCount}
-                            rowHeight={50}
-                            rowRenderer={this.outputsRowRenderer} />
-                    </div>
-                </div> */}
-                {/* <div className='trace-explorer-tooltip'>
-                    <div className='trace-explorer-panel-title'>
-                        {'Time Graph Tooltip'}
-                    </div>
-                    <div className='trace-explorer-panel-content'>
-                        {this.renderTooltip()}
-                    </div>
-                </div> */}
-            </div>;
+    // private handleOpenTrace = async () => {
+    //     this.traceViewerContribution.openDialog();
+    // }
+    onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
+        const { openedExperiments } = this.openedTracesWidget;
+        if (openedExperiments.length) {
+            this.traceViewsContainer.show();
+            this.placeholderWidget.hide();
+        } else {
+            this.traceViewsContainer.hide();
+            this.placeholderWidget.show();
         }
-
-        return <div className='theia-navigator-container' tabIndex={0}>
-            <div className='center'>{'You have not yet opened a trace.'}</div>
-            <div className='open-workspace-button-container'>
-                <button className='theia-button open-workspace-button' title='Select a trace to open'
-                    onClick={this.handleOpenTrace}>{'Open Trace'}</button>
-            </div>
-        </div>;
     }
+    // protected render(): React.ReactNode {
+    //     // this.updateOpenedExperiments = this.updateOpenedExperiments.bind(this);
+    //     // this.updateAvailableAnalysis = this.updateAvailableAnalysis.bind(this);
+    //     // this.experimentRowRenderer = this.experimentRowRenderer.bind(this);
+    //     // this.outputsRowRenderer = this.outputsRowRenderer.bind(this);
+    //     // this.handleShareModalClose = this.handleShareModalClose.bind(this);
+    //     // this.handleOpenTrace = this.handleOpenTrace.bind(this);
+    //     // const { openedExperiments, availableOutputDescriptors, selectedExperimentIndex } = this.openedTracesWidget;
+    //     // let outputsRowCount = 0;
+    //     // if (openedExperiments.length) {
+    //     //     const outputs = availableOutputDescriptors.get(openedExperiments[selectedExperimentIndex].UUID);
+    //     //     if (outputs) {
+    //     //         outputsRowCount = outputs.length;
+    //     //     }
+
+    //         return <div className='trace-explorer-container'>
+    //             {/* <ReactModal isOpen={this.openedTracesWidget.showShareDialog} onRequestClose={this.handleShareModalClose}
+    //                 ariaHideApp={false} className='sharing-modal' overlayClassName='sharing-overlay'>
+    //                 {this.renderSharingModal()}
+    //             </ReactModal> */}
+    //             {/* <div className='trace-explorer-opened'>
+    //                 <div className='trace-explorer-panel-title' onClick={this.updateOpenedExperiments}>
+    //                     {this.OPENED_TRACE_TITLE}
+    //                 </div>
+    //                 <div className='trace-explorer-panel-content'>
+    //                     <List
+    //                         height={300}
+    //                         width={300}
+    //                         rowCount={this.openedExperiments.length}
+    //                         rowHeight={50}
+    //                         rowRenderer={this.experimentRowRenderer} />
+    //                 </div>
+    //             </div> */}
+    //             {/* <div className='trace-explorer-analysis'>
+    //                 <div className='trace-explorer-panel-title'>
+    //                     {this.ANALYSIS_TITLE}
+    //                 </div>
+    //                 <div className='trace-explorer-panel-content'>
+    //                     <List
+    //                         height={300}
+    //                         width={300}
+    //                         rowCount={outputsRowCount}
+    //                         rowHeight={50}
+    //                         rowRenderer={this.outputsRowRenderer} />
+    //                 </div>
+    //             </div> */}
+    //             {/* <div className='trace-explorer-tooltip'>
+    //                 <div className='trace-explorer-panel-title'>
+    //                     {'Time Graph Tooltip'}
+    //                 </div>
+    //                 <div className='trace-explorer-panel-content'>
+    //                     {this.renderTooltip()}
+    //                 </div>
+    //             </div> */}
+    //         </div>;
+    //     }
+
+    //     // return <div className='theia-navigator-container' tabIndex={0}>
+    //     //     <div className='center'>{'You have not yet opened a trace.'}</div>
+    //     //     <div className='open-workspace-button-container'>
+    //     //         <button className='theia-button open-workspace-button' title='Select a trace to open'
+    //     //             onClick={this.handleOpenTrace}>{'Open Trace'}</button>
+    //     //     </div>
+    //     // </div>;
+    // }
 
     // private renderTooltip() {
     //     this.handleSourcecodeLockup = this.handleSourcecodeLockup.bind(this);
@@ -300,28 +317,28 @@ export class TraceExplorerWidget extends BaseWidget {
     //     }
     // }
 
-    private renderSharingModal() {
-        if (this.openedTracesWidget.sharingLink.length) {
-            return <div className='sharing-container'>
-                <div className='sharing-description'>
-                    {'Copy URL to share your trace context'}
-                </div>
-                <div className='sharing-link-info'>
-                    <div className='sharing-link'>
-                        <textarea rows={1} cols={this.openedTracesWidget.sharingLink.length} readOnly={true} value={this.sharingLink} />
-                    </div>
-                    <div className='sharing-link-copy'>
-                        <button className='copy-link-button'>
-                            <FontAwesomeIcon icon={faCopy} />
-                        </button>
-                    </div>
-                </div>
-            </div>;
-        }
-        return <div style={{ color: 'white' }}>
-            {'Cannot share this trace'}
-        </div>;
-    }
+    // private renderSharingModal() {
+    //     if (this.openedTracesWidget.sharingLink.length) {
+    //         return <div className='sharing-container'>
+    //             <div className='sharing-description'>
+    //                 {'Copy URL to share your trace context'}
+    //             </div>
+    //             <div className='sharing-link-info'>
+    //                 <div className='sharing-link'>
+    //                     <textarea rows={1} cols={this.openedTracesWidget.sharingLink.length} readOnly={true} value={this.sharingLink} />
+    //                 </div>
+    //                 <div className='sharing-link-copy'>
+    //                     <button className='copy-link-button'>
+    //                         <FontAwesomeIcon icon={faCopy} />
+    //                     </button>
+    //                 </div>
+    //             </div>
+    //         </div>;
+    //     }
+    //     return <div style={{ color: 'white' }}>
+    //         {'Cannot share this trace'}
+    //     </div>;
+    // }
 
     // private experimentRowRenderer(props: ListRowProps): React.ReactNode {
     //     let traceName = '';

@@ -11,7 +11,6 @@ export class TraceExplorerTooltipWidget extends ReactWidget {
 
     @inject(EditorManager) protected readonly editorManager!: EditorManager;
 
-
     protected _tooltip: { [key: string]: string } = {};
     get tooltip(): { [key: string]: string } {
         return this._tooltip;

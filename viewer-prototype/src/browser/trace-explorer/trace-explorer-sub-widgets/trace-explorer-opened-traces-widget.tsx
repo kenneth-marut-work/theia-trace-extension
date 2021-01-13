@@ -1,5 +1,5 @@
 import { inject, injectable, postConstruct } from 'inversify';
-import { ReactWidget } from "@theia/core/lib/browser";
+import { ReactWidget, Message } from "@theia/core/lib/browser";
 import * as React from 'react';
 import { List, ListRowProps } from 'react-virtualized';
 import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
@@ -9,6 +9,11 @@ import { Emitter } from '@theia/core';
 import { TspClientProvider } from '../../tsp-client-provider';
 import { signalManager, Signals } from '@trace-viewer/base/lib/signal-manager';
 import { TraceExplorerTooltipWidget } from './trace-explorer-tooltip-widget';
+import ReactModal from 'react-modal';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCopy } from '@fortawesome/free-solid-svg-icons';
+// import { TraceViewerWidget } from '../../trace-viewer/trace-viewer';
+
 
 
 @injectable()
@@ -16,8 +21,14 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     static ID = 'trace-explorer-opened-traces-widget';
     static LABEL = 'Opened Traces';
 
-    private static experimentSelectedEmitter = new Emitter<Experiment>();
-    public static experimentSelectedSignal = TraceExplorerOpenedTracesWidget.experimentSelectedEmitter.event;
+    protected experimentSelectedEmitter = new Emitter<Experiment>();
+    experimentSelectedSignal = this.experimentSelectedEmitter.event;
+
+    @inject(TspClientProvider) protected readonly tspClientProvider!: TspClientProvider;
+    @inject(TraceExplorerTooltipWidget) protected readonly tooltipWidget!: TraceExplorerTooltipWidget;
+
+    protected readonly updateRequestEmitter = new Emitter<void>();
+    widgetWasUpdated = this.updateRequestEmitter.event;
 
     protected _sharingLink = '';
     get sharingLink(): string {
@@ -44,14 +55,18 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     set showShareDialog(doShow: boolean) {
         this._showShareDialog = doShow;
     }
-    private lastSelectedOutputIndex = -1;
+    protected _lastSelectedOutputIndex = -1;
+    get lastSelectedOutputIndex(): number {
+        return this._lastSelectedOutputIndex;
+    }
+    set lastSelectedOutputIndex(index: number) {
+        this._lastSelectedOutputIndex = index;
+    }
     protected _availableOutputDescriptors: Map<string, OutputDescriptor[]> = new Map();
     get availableOutputDescriptors(): Map<string, OutputDescriptor[]> {
         return this._availableOutputDescriptors;
     }
 
-    @inject(TspClientProvider) protected readonly tspClientProvider!: TspClientProvider;
-    @inject(TraceExplorerTooltipWidget) protected readonly tooltipWidget!: TraceExplorerTooltipWidget;
 
     @postConstruct()
     init(): void {
@@ -66,6 +81,8 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
         this.tspClientProvider.addTspClientChangeListener(tspClient => {
             this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
+        // this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.onWidgetActivated(experiment)));
+
         this.initialize();
         this.update();
     }
@@ -94,24 +111,36 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     }
 
     render(): React.ReactNode {
+        this.updateOpenedExperiments = this.updateOpenedExperiments.bind(this);
+        this.updateAvailableAnalysis = this.updateAvailableAnalysis.bind(this);
+        this.experimentRowRenderer = this.experimentRowRenderer.bind(this);
+        this.handleShareModalClose = this.handleShareModalClose.bind(this);
+
         return (
-            <div className='trace-explorer-opened'>
-                <div className='trace-explorer-panel-title' onClick={this.updateOpenedExperiments}>
-                    {TraceExplorerOpenedTracesWidget.LABEL}
+            <>
+                <ReactModal isOpen={this.showShareDialog} onRequestClose={this.handleShareModalClose}
+                    ariaHideApp={false} className='sharing-modal' overlayClassName='sharing-overlay'>
+                    {this.renderSharingModal()}
+                </ReactModal>
+                <div className='trace-explorer-opened'>
+                    <div className='trace-explorer-panel-title' onClick={this.updateOpenedExperiments}>
+                        {TraceExplorerOpenedTracesWidget.LABEL}
+                    </div>
+                    <div className='trace-explorer-panel-content'>
+                        <List
+                            height={300}
+                            width={300}
+                            rowCount={this._openedExperiments.length}
+                            rowHeight={50}
+                            rowRenderer={this.experimentRowRenderer} />
+                    </div>
                 </div>
-                <div className='trace-explorer-panel-content'>
-                    <List
-                        height={300}
-                        width={300}
-                        rowCount={this._openedExperiments.length}
-                        rowHeight={50}
-                        rowRenderer={this.experimentRowRenderer} />
-                </div>
-            </div>
+            </>
         );
     }
 
-    private experimentRowRenderer = (props: ListRowProps): React.ReactNode => {
+    private experimentRowRenderer(props: ListRowProps): React.ReactNode {
+        console.log('SENTINEL RERENDERING PROPS', props);
         let traceName = '';
         let tracePath = '';
         if (this._openedExperiments && this._openedExperiments.length && props.index < this._openedExperiments.length) {
@@ -129,6 +158,7 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
             }
         }
         let traceContainerClassName = 'trace-element-container';
+        console.log('SENTINEL PROPS INDEX', props.index, this._selectedExperimentIndex);
         if (props.index === this._selectedExperimentIndex) {
             traceContainerClassName = traceContainerClassName + ' theia-mod-selected';
         }
@@ -152,6 +182,29 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
         </div>;
     }
 
+    private renderSharingModal() {
+        if (this.sharingLink.length) {
+            return <div className='sharing-container'>
+                <div className='sharing-description'>
+                    {'Copy URL to share your trace context'}
+                </div>
+                <div className='sharing-link-info'>
+                    <div className='sharing-link'>
+                        <textarea rows={1} cols={this.sharingLink.length} readOnly={true} value={this.sharingLink} />
+                    </div>
+                    <div className='sharing-link-copy'>
+                        <button className='copy-link-button'>
+                            <FontAwesomeIcon icon={faCopy} />
+                        </button>
+                    </div>
+                </div>
+            </div>;
+        }
+        return <div style={{ color: 'white' }}>
+            {'Cannot share this trace'}
+        </div>;
+    }
+
     private async updateOpenedExperiments() {
         this._openedExperiments = await this.experimentManager.getOpenedExperiments();
         const selectedIndex = this._openedExperiments.findIndex(experiment => this.selectedExperiment &&
@@ -168,19 +221,19 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     }
 
     private onExperimentSelected(index: number) {
-        TraceExplorerOpenedTracesWidget.experimentSelectedEmitter.fire(this._openedExperiments[index]);
+        this.experimentSelectedEmitter.fire(this._openedExperiments[index]);
         this.selectExperiment(index);
     }
 
     private selectExperiment(index: number) {
         if (index >= 0 && index !== this._selectedExperimentIndex) {
             this._selectedExperimentIndex = index;
-            this.lastSelectedOutputIndex = -1;
+            this._lastSelectedOutputIndex = -1;
             this.updateAvailableAnalysis(this._openedExperiments[index]);
         }
     }
 
-    private updateAvailableAnalysis = async (experiment: Experiment | undefined) => {
+    private async updateAvailableAnalysis(experiment: Experiment | undefined) {
         if (experiment) {
             const outputs = await this.getOutputDescriptors(experiment);
             this._availableOutputDescriptors.set(experiment.UUID, outputs);
@@ -202,15 +255,20 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
         return outputDescriptors;
     }
 
-    private onWidgetActivated(experiment: Experiment) {
+    onWidgetActivated(experiment: Experiment) {
         this.selectedExperiment = experiment;
         const selectedIndex = this._openedExperiments.findIndex(openedExperiment => openedExperiment.UUID === experiment.UUID);
         this.selectExperiment(selectedIndex);
     }
 
-    private handleShareModalClose = () => {
+    private handleShareModalClose() {
         this.showShareDialog = false;
         this.sharingLink = '';
         this.update();
+    }
+
+    onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
+        this.updateRequestEmitter.fire();
     }
 }
