@@ -1,5 +1,4 @@
 import { injectable, inject, interfaces, Container, postConstruct } from 'inversify';
-import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from 'react';
 import { List, ListRowProps } from 'react-virtualized';
 import { OutputDescriptor } from 'tsp-typescript-client/lib/models/output-descriptor';
@@ -7,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { /* faShareSquare, */ faCopy } from '@fortawesome/free-solid-svg-icons';
 import ReactModal from 'react-modal';
 import { Emitter } from '@theia/core';
-import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
+import { EditorManager } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
 import { ExperimentManager } from '@trace-viewer/base/lib/experiment-manager';
@@ -18,6 +17,8 @@ import { TraceViewerWidget } from '../trace-viewer/trace-viewer';
 import { TraceViewerContribution } from '../trace-viewer/trace-viewer-contribution';
 import { TraceExplorerAnalysisWidget } from './trace-explorer-sub-widgets/trace-explorer-analysis-widget';
 import { ViewContainer, PanelLayout, BaseWidget } from '@theia/core/lib/browser';
+import { TraceExplorerTooltipWidget } from './trace-explorer-sub-widgets/trace-explorer-tooltip-widget';
+import { TraceExplorerOpenedTracesWidget } from './trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
 
 export const TRACE_EXPLORER_LABEL = 'Trace Explorer';
 export const TRACE_EXPLORER_ID = 'trace-explorer';
@@ -48,7 +49,7 @@ export class TraceExplorerWidget extends BaseWidget {
 
     private OPENED_TRACE_TITLE = 'Opened Traces';
     // private FILE_NAVIGATOR_TITLE: string = 'File navigator';
-    private ANALYSIS_TITLE = 'Available Analyses';
+    private ANALYSIS_TITLE = 'Available Analysis';
 
     private openedExperiments: Array<Experiment> = [];
     private selectedExperimentIndex = 0;
@@ -58,7 +59,7 @@ export class TraceExplorerWidget extends BaseWidget {
     private showShareDialog = false;
     private sharingLink = '';
 
-    private tooltip: { [key: string]: string } = {};
+    // private tooltip: { [key: string]: string } = {};
     private selectedExperiment: Experiment | undefined;
     private experimentManager: ExperimentManager;
 
@@ -68,12 +69,14 @@ export class TraceExplorerWidget extends BaseWidget {
     private static experimentSelectedEmitter = new Emitter<Experiment>();
     public static experimentSelectedSignal = TraceExplorerWidget.experimentSelectedEmitter.event;
 
-    protected viewContainer: ViewContainer;
+    protected viewContainer!: ViewContainer;
 
     static createContainer(parent: interfaces.Container): Container {
         const child = new Container({ defaultScope: 'Singleton' });
         child.parent = parent;
+        child.bind(TraceExplorerOpenedTracesWidget).toSelf().inSingletonScope();
         child.bind(TraceExplorerAnalysisWidget).toSelf().inSingletonScope();
+        child.bind(TraceExplorerTooltipWidget).toSelf().inSingletonScope();
         child.bind(TraceExplorerWidget).toSelf().inSingletonScope();
         return child;
     }
@@ -82,11 +85,13 @@ export class TraceExplorerWidget extends BaseWidget {
         return TraceExplorerWidget.createContainer(parent).get(TraceExplorerWidget);
     }
 
+    @inject(TraceExplorerAnalysisWidget) protected readonly analysisWidget!: TraceExplorerAnalysisWidget;
+    @inject(TraceExplorerOpenedTracesWidget) protected readonly openedTracesWidget!: TraceExplorerOpenedTracesWidget;
+    @inject(TraceExplorerTooltipWidget) protected readonly tooltipWidget!: TraceExplorerTooltipWidget;
+
     constructor(
         @inject(TspClientProvider) private tspClientProvider: TspClientProvider,
-        @inject(EditorManager) protected readonly editorManager: EditorManager,
         @inject(ViewContainer.Factory) protected readonly viewContainerFactory: ViewContainer.Factory,
-        @inject(TraceExplorerAnalysisWidget) protected readonly analysisWidget: TraceExplorerAnalysisWidget
     ) {
         super();
         this.id = TRACE_EXPLORER_ID;
@@ -99,16 +104,6 @@ export class TraceExplorerWidget extends BaseWidget {
         signalManager().on(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
         signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
         this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.onWidgetActivated(experiment)));
-
-        this.viewContainer = this.viewContainerFactory({
-            id: this.id
-        });
-        this.viewContainer.addWidget(this.analysisWidget);
-        this.toDispose.push(this.viewContainer);
-        const layout = this.layout = new PanelLayout();
-        layout.addWidget(this.viewContainer);
-        this.initialize();
-
         this.tspClientProvider.addTspClientChangeListener(tspClient => {
             this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
@@ -116,7 +111,16 @@ export class TraceExplorerWidget extends BaseWidget {
 
     @postConstruct()
     init(): void {
-        console.log('SENTINEL CODE', 0);
+        this.viewContainer = this.viewContainerFactory({
+            id: this.id
+        });
+        this.viewContainer.addWidget(this.openedTracesWidget);
+        this.viewContainer.addWidget(this.analysisWidget);
+        this.viewContainer.addWidget(this.tooltipWidget);
+        this.toDispose.push(this.viewContainer);
+        const layout = this.layout = new PanelLayout();
+        layout.addWidget(this.viewContainer);
+        this.initialize();
     }
 
     dispose() {
@@ -172,7 +176,7 @@ export class TraceExplorerWidget extends BaseWidget {
                     ariaHideApp={false} className='sharing-modal' overlayClassName='sharing-overlay'>
                     {this.renderSharingModal()}
                 </ReactModal>
-                <div className='trace-explorer-opened'>
+                {/* <div className='trace-explorer-opened'>
                     <div className='trace-explorer-panel-title' onClick={this.updateOpenedExperiments}>
                         {this.OPENED_TRACE_TITLE}
                     </div>
@@ -184,7 +188,7 @@ export class TraceExplorerWidget extends BaseWidget {
                             rowHeight={50}
                             rowRenderer={this.experimentRowRenderer} />
                     </div>
-                </div>
+                </div> */}
                 <div className='trace-explorer-analysis'>
                     <div className='trace-explorer-panel-title'>
                         {this.ANALYSIS_TITLE}
@@ -198,14 +202,14 @@ export class TraceExplorerWidget extends BaseWidget {
                             rowRenderer={this.outputsRowRenderer} />
                     </div>
                 </div>
-                <div className='trace-explorer-tooltip'>
+                {/* <div className='trace-explorer-tooltip'>
                     <div className='trace-explorer-panel-title'>
                         {'Time Graph Tooltip'}
                     </div>
                     <div className='trace-explorer-panel-content'>
                         {this.renderTooltip()}
                     </div>
-                </div>
+                </div> */}
             </div>;
         }
 
@@ -218,74 +222,74 @@ export class TraceExplorerWidget extends BaseWidget {
         </div>;
     }
 
-    private renderTooltip() {
-        this.handleSourcecodeLockup = this.handleSourcecodeLockup.bind(this);
-        const tooltipArray: JSX.Element[] = [];
-        if (this.tooltip) {
-            const keys = Object.keys(this.tooltip);
-            keys.forEach(key => {
-                if (key === 'Source') {
-                    const sourceCodeInfo = this.tooltip[key];
-                    const matches = sourceCodeInfo.match('(.*):(\\d+)');
-                    let fileLocation;
-                    let line;
-                    if (matches && matches.length === 3) {
-                        fileLocation = matches[1];
-                        line = matches[2];
-                    }
-                    tooltipArray.push(<p className='source-code-tooltip'
-                        key={key}
-                        onClick={this.handleSourcecodeLockup.bind(this, fileLocation, line)}>{key + ': ' + sourceCodeInfo}</p>);
-                } else {
-                    tooltipArray.push(<p key={key}>{key + ': ' + this.tooltip[key]}</p>);
-                }
-            });
-        }
+    // private renderTooltip() {
+    //     this.handleSourcecodeLockup = this.handleSourcecodeLockup.bind(this);
+    //     const tooltipArray: JSX.Element[] = [];
+    //     if (this.tooltip) {
+    //         const keys = Object.keys(this.tooltip);
+    //         keys.forEach(key => {
+    //             if (key === 'Source') {
+    //                 const sourceCodeInfo = this.tooltip[key];
+    //                 const matches = sourceCodeInfo.match('(.*):(\\d+)');
+    //                 let fileLocation;
+    //                 let line;
+    //                 if (matches && matches.length === 3) {
+    //                     fileLocation = matches[1];
+    //                     line = matches[2];
+    //                 }
+    //                 tooltipArray.push(<p className='source-code-tooltip'
+    //                     key={key}
+    //                     onClick={this.handleSourcecodeLockup.bind(this, fileLocation, line)}>{key + ': ' + sourceCodeInfo}</p>);
+    //             } else {
+    //                 tooltipArray.push(<p key={key}>{key + ': ' + this.tooltip[key]}</p>);
+    //             }
+    //         });
+    //     }
 
-        return <React.Fragment>
-            {tooltipArray.map(element => element)}
-        </React.Fragment>;
-    }
+    //     return <React.Fragment>
+    //         {tooltipArray.map(element => element)}
+    //     </React.Fragment>;
+    // }
 
-    private handleSourcecodeLockup(fileLocation: string | undefined, line: string | undefined) {
-        if (fileLocation) {
-            const modeOpt: EditorOpenerOptions = {
-                mode: 'open'
-            };
-            let slectionOpt = {
-                selection: {
-                    start: {
-                        line: 0,
-                        character: 0
-                    },
-                    end: {
-                        line: 0,
-                        character: 0
-                    }
-                }
-            };
-            if (line) {
-                const lineNumber = parseInt(line);
-                slectionOpt = {
-                    selection: {
-                        start: {
-                            line: lineNumber,
-                            character: 0
-                        },
-                        end: {
-                            line: lineNumber,
-                            character: 0
-                        }
-                    }
-                };
-            }
-            const opts = {
-                ...modeOpt,
-                ...slectionOpt
-            };
-            this.editorManager.open(new URI(fileLocation), opts);
-        }
-    }
+    // private handleSourcecodeLockup(fileLocation: string | undefined, line: string | undefined) {
+    //     if (fileLocation) {
+    //         const modeOpt: EditorOpenerOptions = {
+    //             mode: 'open'
+    //         };
+    //         let slectionOpt = {
+    //             selection: {
+    //                 start: {
+    //                     line: 0,
+    //                     character: 0
+    //                 },
+    //                 end: {
+    //                     line: 0,
+    //                     character: 0
+    //                 }
+    //             }
+    //         };
+    //         if (line) {
+    //             const lineNumber = parseInt(line);
+    //             slectionOpt = {
+    //                 selection: {
+    //                     start: {
+    //                         line: lineNumber,
+    //                         character: 0
+    //                     },
+    //                     end: {
+    //                         line: lineNumber,
+    //                         character: 0
+    //                     }
+    //                 }
+    //             };
+    //         }
+    //         const opts = {
+    //             ...modeOpt,
+    //             ...slectionOpt
+    //         };
+    //         this.editorManager.open(new URI(fileLocation), opts);
+    //     }
+    // }
 
     private renderSharingModal() {
         if (this.sharingLink.length) {
