@@ -28,9 +28,7 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
 
     render(): React.ReactNode {
         this.outputsRowRenderer = this.outputsRowRenderer.bind(this);
-        const { clientWidth, clientHeight } = this.node;
-        console.log('SENTINEL SCROLL CONTAINER', this.getScrollContainer());
-        console.log('SENTINEL NODE', this.node);
+        const { clientHeight, clientWidth } = this.node.parentElement!;
         const { openedExperiments, availableOutputDescriptors, selectedExperimentIndex } = this.openedTracesWidget;
         let outputsRowCount = 0;
         const outputs = availableOutputDescriptors.get(openedExperiments[selectedExperimentIndex].UUID);
@@ -44,7 +42,7 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
                 </div> */}
                 <div className='trace-explorer-panel-content'>
                     <List
-                        height={500}
+                        height={clientHeight}
                         width={clientWidth}
                         rowCount={outputsRowCount}
                         rowHeight={50}
@@ -70,7 +68,12 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
         if (props.index === lastSelectedOutputIndex) {
             traceContainerClassName = traceContainerClassName + ' theia-mod-selected';
         }
-        return <div className={traceContainerClassName} key={props.key} style={props.style} onClick={this.outputClicked.bind(this, props.index)}>
+        return <div className={traceContainerClassName}
+            id={`${traceContainerClassName}-${props.index}`}
+            key={props.key}
+            style={props.style}
+            onClick={this.outputClicked.bind(this, props.index)}
+        >
             <div className='outputs-element-name'>
                 {outputName}
             </div>

@@ -1,4 +1,4 @@
-import { injectable, inject,  postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 // import * as React from 'react';
 // import { List, ListRowProps } from 'react-virtualized';
 // import { OutputDescriptor } from 'tsp-typescript-client/lib/models/output-descriptor';
@@ -16,7 +16,7 @@ import { injectable, inject,  postConstruct } from 'inversify';
 // import { TraceViewerWidget } from '../trace-viewer/trace-viewer';
 // import { TraceViewerContribution } from '../trace-viewer/trace-viewer-contribution';
 import { TraceExplorerAnalysisWidget } from './trace-explorer-sub-widgets/trace-explorer-analysis-widget';
-import { ViewContainer, PanelLayout, BaseWidget, Message } from '@theia/core/lib/browser';
+import { ViewContainer, BaseWidget, Message, PanelLayout } from '@theia/core/lib/browser';
 import { TraceExplorerTooltipWidget } from './trace-explorer-sub-widgets/trace-explorer-tooltip-widget';
 import { TraceExplorerOpenedTracesWidget } from './trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
 import { TraceExplorerPlaceholderWidget } from './trace-explorer-sub-widgets/trace-explorer-placeholder-widget';
@@ -119,7 +119,6 @@ export class TraceExplorerWidget extends BaseWidget {
         layout.addWidget(this.placeholderWidget);
         layout.addWidget(this.traceViewsContainer);
         this.update();
-        console.log('SENTINEL LAYOUT', layout);
         // this.initialize();
     }
 

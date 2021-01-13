@@ -118,7 +118,7 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
         this.updateAvailableAnalysis = this.updateAvailableAnalysis.bind(this);
         this.experimentRowRenderer = this.experimentRowRenderer.bind(this);
         this.handleShareModalClose = this.handleShareModalClose.bind(this);
-
+        const { clientWidth, clientHeight } = this.node.parentElement!;
         return (
             <>
                 <ReactModal isOpen={this.showShareDialog} onRequestClose={this.handleShareModalClose}
@@ -132,8 +132,8 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
                     <div className='trace-explorer-panel-content'
                         onClick={this.updateOpenedExperiments}>
                         <List
-                            height={300}
-                            width={300}
+                            height={clientHeight}
+                            width={clientWidth}
                             rowCount={this._openedExperiments.length}
                             rowHeight={50}
                             rowRenderer={this.experimentRowRenderer} />
@@ -144,7 +144,6 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     }
 
     private experimentRowRenderer(props: ListRowProps): React.ReactNode {
-        console.log('SENTINEL RERENDERING PROPS', props);
         let traceName = '';
         let tracePath = '';
         if (this._openedExperiments && this._openedExperiments.length && props.index < this._openedExperiments.length) {
@@ -162,7 +161,6 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
             }
         }
         let traceContainerClassName = 'trace-element-container';
-        console.log('SENTINEL PROPS INDEX', props.index, this._selectedExperimentIndex);
         if (props.index === this._selectedExperimentIndex) {
             traceContainerClassName = traceContainerClassName + ' theia-mod-selected';
         }

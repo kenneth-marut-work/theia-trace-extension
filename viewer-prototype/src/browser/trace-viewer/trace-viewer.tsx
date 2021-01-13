@@ -79,7 +79,7 @@ export class TraceViewerWidget extends ReactWidget {
             this.experimentManager = this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
     }
-    
+
     @postConstruct()
     init(): void {
         this.toDispose.push(this.analysisWidget.outputAddedSignal(output => this.onOutputAdded(output)));
@@ -231,7 +231,6 @@ export class TraceViewerWidget extends ReactWidget {
     }
 
     private onExperimentSelected(experiment: Experiment) {
-        console.log('SENTINEL GOT EXPERIMENTL SELECT', experiment);
         if (this.openedExperiment && this.openedExperiment.UUID === experiment.UUID) {
             this.shell.activateWidget(this.openedExperiment.UUID);
         }
