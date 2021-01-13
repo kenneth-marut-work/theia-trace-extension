@@ -3,6 +3,7 @@ import { ReactWidget } from "@theia/core/lib/browser";
 import * as React from 'react';
 import { EditorOpenerOptions, EditorManager } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
+import { Signals, signalManager } from '@trace-viewer/base/lib/signal-manager';
 
 @injectable()
 export class TraceExplorerTooltipWidget extends ReactWidget {
@@ -23,7 +24,14 @@ export class TraceExplorerTooltipWidget extends ReactWidget {
     init(): void {
         this.id = TraceExplorerTooltipWidget.ID;
         this.title.label = TraceExplorerTooltipWidget.LABEL;
+        signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip))
         this.update();
+    }
+
+    dispose() {
+        super.dispose();
+        signalManager().off(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
+
     }
 
     private renderTooltip() {
@@ -50,9 +58,10 @@ export class TraceExplorerTooltipWidget extends ReactWidget {
             });
         }
 
-        return <React.Fragment>
-            {tooltipArray.map(element => element)}
-        </React.Fragment>;
+        return (
+            <React.Fragment>
+                {tooltipArray.map(element => element)}
+            </React.Fragment>);
     }
 
     private handleSourcecodeLockup(fileLocation: string | undefined, line: string | undefined) {
@@ -98,13 +107,18 @@ export class TraceExplorerTooltipWidget extends ReactWidget {
     render(): React.ReactNode {
         return (
             <div className='trace-explorer-tooltip'>
-                <div className='trace-explorer-panel-title'>
+                {/* <div className='trace-explorer-panel-title'>
                     {'Time Graph Tooltip'}
-                </div>
+                </div> */}
                 <div className='trace-explorer-panel-content'>
                     {this.renderTooltip()}
                 </div>
             </div>
         );
+    }
+
+    private onTooltip(tooltip: { [key: string]: string }) {
+        this.tooltip = tooltip;
+        this.update();
     }
 }

@@ -24,6 +24,9 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     protected experimentSelectedEmitter = new Emitter<Experiment>();
     experimentSelectedSignal = this.experimentSelectedEmitter.event;
 
+    protected availableOutputDescriptorsEmitter = new Emitter<Map<string, OutputDescriptor[]>>();
+    availableOutputDescriptorsDidChange = this.availableOutputDescriptorsEmitter.event;
+
     @inject(TspClientProvider) protected readonly tspClientProvider!: TspClientProvider;
     @inject(TraceExplorerTooltipWidget) protected readonly tooltipWidget!: TraceExplorerTooltipWidget;
 
@@ -123,10 +126,11 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
                     {this.renderSharingModal()}
                 </ReactModal>
                 <div className='trace-explorer-opened'>
-                    <div className='trace-explorer-panel-title' onClick={this.updateOpenedExperiments}>
+                    {/* <div className='trace-explorer-panel-title' onClick={this.updateOpenedExperiments}>
                         {TraceExplorerOpenedTracesWidget.LABEL}
-                    </div>
-                    <div className='trace-explorer-panel-content'>
+                    </div> */}
+                    <div className='trace-explorer-panel-content'
+                        onClick={this.updateOpenedExperiments}>
                         <List
                             height={300}
                             width={300}
@@ -243,6 +247,7 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
                 this._availableOutputDescriptors.set(this._openedExperiments[0].UUID, outputs);
             }
         }
+        this.availableOutputDescriptorsEmitter.fire(this._availableOutputDescriptors);
         this.update();
     }
 

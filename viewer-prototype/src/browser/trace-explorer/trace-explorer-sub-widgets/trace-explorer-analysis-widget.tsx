@@ -1,5 +1,5 @@
 import { inject, injectable, postConstruct } from 'inversify';
-import { ReactWidget } from "@theia/core/lib/browser";
+import { ReactWidget, Widget } from "@theia/core/lib/browser";
 import * as React from 'react';
 import { List, ListRowProps } from 'react-virtualized';
 import { TraceExplorerOpenedTracesWidget } from './trace-explorer-opened-traces-widget';
@@ -20,12 +20,17 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
     init(): void {
         this.id = TraceExplorerAnalysisWidget.ID;
         this.title.label = TraceExplorerAnalysisWidget.LABEL;
+        this.toDispose.push(this.openedTracesWidget.availableOutputDescriptorsDidChange(() => {
+            this.update();
+        }))
         this.update();
     }
 
     render(): React.ReactNode {
         this.outputsRowRenderer = this.outputsRowRenderer.bind(this);
-
+        const { clientWidth, clientHeight } = this.node;
+        console.log('SENTINEL SCROLL CONTAINER', this.getScrollContainer());
+        console.log('SENTINEL NODE', this.node);
         const { openedExperiments, availableOutputDescriptors, selectedExperimentIndex } = this.openedTracesWidget;
         let outputsRowCount = 0;
         const outputs = availableOutputDescriptors.get(openedExperiments[selectedExperimentIndex].UUID);
@@ -34,13 +39,13 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
         }
         return (
             <div className='trace-explorer-analysis'>
-                <div className='trace-explorer-panel-title'>
+                {/* <div className='trace-explorer-panel-title'>
                     {TraceExplorerAnalysisWidget.LABEL}
-                </div>
+                </div> */}
                 <div className='trace-explorer-panel-content'>
                     <List
-                        height={300}
-                        width={300}
+                        height={500}
+                        width={clientWidth}
                         rowCount={outputsRowCount}
                         rowHeight={50}
                         rowRenderer={this.outputsRowRenderer} />
@@ -83,6 +88,11 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
         if (outputs) {
             this.outputAddedEmitter.fire(new OutputAddedSignalPayload(outputs[index], trace));
         }
+        this.update();
+    }
+
+    onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
         this.update();
     }
 }

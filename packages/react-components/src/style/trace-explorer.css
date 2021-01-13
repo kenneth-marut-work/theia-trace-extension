@@ -16,7 +16,7 @@
     grid-row-start: 1;
     display: grid;
     grid-template-columns: 100%;
-    grid-template-rows: 25px 1fr;
+    /* grid-template-rows: 25px 1fr; */
 }
 
 /* .trace-explorer-files {
@@ -25,13 +25,6 @@
     grid-template-columns: 100%;
     grid-template-rows: 25px 1fr;
 } */
-
-.trace-explorer-analysis {
-    grid-row-start: 2;
-    display: grid;
-    grid-template-columns: 100%;
-    grid-template-rows: 25px 1fr;
-}
 
 .trace-explorer-panel-title {
     grid-row-start: 1;
@@ -46,7 +39,6 @@
     grid-row-start: 2;
     border: 1px solid var(--theia-layout-color4);
     /* color: white; */
-    padding-inline-start: 5px;
     white-space: nowrap;
 }
 

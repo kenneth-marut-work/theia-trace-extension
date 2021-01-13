@@ -11,7 +11,7 @@ import { injectable, inject,  postConstruct } from 'inversify';
 // import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
 // import { ExperimentManager } from '@trace-viewer/base/lib/experiment-manager';
 // import { TspClientProvider } from '../tsp-client-provider';
-import { signalManager, Signals } from '@trace-viewer/base/lib/signal-manager';
+// import { signalManager, Signals } from '@trace-viewer/base/lib/signal-manager';
 /* FIXME: This may cause Circular dependency between trace-viewer and trace-explorer-widget */
 // import { TraceViewerWidget } from '../trace-viewer/trace-viewer';
 // import { TraceViewerContribution } from '../trace-viewer/trace-viewer-contribution';
@@ -103,7 +103,7 @@ export class TraceExplorerWidget extends BaseWidget {
         // signalManager().on(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
         // signalManager().on(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
         // signalManager().on(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
-        signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
+        // signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
         // this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.openedTracesWidget.onWidgetActivated(experiment)));
 
         this.toDispose.push(this.openedTracesWidget.widgetWasUpdated(() => this.update()));
@@ -119,16 +119,17 @@ export class TraceExplorerWidget extends BaseWidget {
         layout.addWidget(this.placeholderWidget);
         layout.addWidget(this.traceViewsContainer);
         this.update();
+        console.log('SENTINEL LAYOUT', layout);
         // this.initialize();
     }
 
-    dispose() {
-        super.dispose();
-        // signalManager().off(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
-        // signalManager().off(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
-        // signalManager().off(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
-        signalManager().off(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
-    }
+    // dispose() {
+    //     super.dispose();
+    //     // signalManager().off(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
+    //     // signalManager().off(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
+    //     // signalManager().off(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
+    //     // signalManager().off(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
+    // }
 
     // private onExperimentOpened(openedExperiment: Experiment) {
     //     this.updateOpenedExperiments();
@@ -141,10 +142,10 @@ export class TraceExplorerWidget extends BaseWidget {
     //     this.updateAvailableAnalysis(undefined);
     // }
 
-    private onTooltip(tooltip: { [key: string]: string }) {
-        this.tooltipWidget.tooltip = tooltip;
-        this.update();
-    }
+    // private onTooltip(tooltip: { [key: string]: string }) {
+    //     this.tooltipWidget.tooltip = tooltip;
+    //     this.update();
+    // }
 
     // async initialize(): Promise<void> {
     //     this.updateOpenedExperiments();
