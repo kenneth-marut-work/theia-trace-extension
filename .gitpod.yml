@@ -27,6 +27,3 @@ tasks:
 github:
   prebuilds:
     pullRequestsFromForks: true
-vscode:
-  extensions:
-    - vscodevim.vim@1.18.5:mvmr2A2vpFZRzLfyxtznHw==

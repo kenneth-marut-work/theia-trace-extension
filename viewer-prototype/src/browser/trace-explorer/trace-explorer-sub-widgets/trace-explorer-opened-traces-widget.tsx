@@ -7,6 +7,8 @@ import { ExperimentManager } from '@trace-viewer/base/lib/experiment-manager';
 import { OutputDescriptor } from 'tsp-typescript-client/lib/models/output-descriptor';
 import { Emitter } from '@theia/core';
 import { TspClientProvider } from '../../tsp-client-provider';
+import { signalManager, Signals } from '@trace-viewer/base/lib/signal-manager';
+import { TraceExplorerTooltipWidget } from './trace-explorer-tooltip-widget';
 
 
 @injectable()
@@ -21,26 +23,74 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     get sharingLink(): string {
         return this._sharingLink;
     }
-    private openedExperiments: Array<Experiment> = [];
-    private selectedExperimentIndex = 0;
+    set sharingLink(link: string) {
+        this._sharingLink = link;
+    }
+    protected _openedExperiments: Array<Experiment> = [];
+    get openedExperiments(): Array<Experiment> {
+        return this._openedExperiments;
+    }
+
+    protected _selectedExperimentIndex = 0;
+    get selectedExperimentIndex(): number {
+        return this._selectedExperimentIndex;
+    }
     private experimentManager!: ExperimentManager;
     private selectedExperiment: Experiment | undefined;
-    private showShareDialog = false;
+    private _showShareDialog = false;
+    get showShareDialog(): boolean {
+        return this._showShareDialog;
+    }
+    set showShareDialog(doShow: boolean) {
+        this._showShareDialog = doShow;
+    }
     private lastSelectedOutputIndex = -1;
-    private availableOutputDescriptors: Map<string, OutputDescriptor[]> = new Map();
+    protected _availableOutputDescriptors: Map<string, OutputDescriptor[]> = new Map();
+    get availableOutputDescriptors(): Map<string, OutputDescriptor[]> {
+        return this._availableOutputDescriptors;
+    }
 
-    @inject(TspClientProvider) protected tspClientProvider!: TspClientProvider;
+    @inject(TspClientProvider) protected readonly tspClientProvider!: TspClientProvider;
+    @inject(TraceExplorerTooltipWidget) protected readonly tooltipWidget!: TraceExplorerTooltipWidget;
 
     @postConstruct()
     init(): void {
         this.id = TraceExplorerOpenedTracesWidget.ID;
         this.title.label = TraceExplorerOpenedTracesWidget.LABEL;
 
+        signalManager().on(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
+        signalManager().on(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment))
+        signalManager().on(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
+
         this.experimentManager = this.tspClientProvider.getExperimentManager();
         this.tspClientProvider.addTspClientChangeListener(tspClient => {
             this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
+        this.initialize();
         this.update();
+    }
+
+    dispose() {
+        super.dispose();
+        signalManager().off(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
+        signalManager().off(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
+        signalManager().off(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
+    }
+
+    async initialize(): Promise<void> {
+        this.updateOpenedExperiments();
+        this.updateAvailableAnalysis(undefined);
+    }
+
+    private onExperimentOpened(openedExperiment: Experiment) {
+        this.updateOpenedExperiments();
+        this.updateAvailableAnalysis(openedExperiment);
+    }
+
+    private onExperimentClosed(_closedExperiment: Experiment) {
+        this.tooltipWidget.tooltip = {};
+        this.updateOpenedExperiments();
+        this.updateAvailableAnalysis(undefined);
     }
 
     render(): React.ReactNode {
@@ -53,7 +103,7 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
                     <List
                         height={300}
                         width={300}
-                        rowCount={this.openedExperiments.length}
+                        rowCount={this._openedExperiments.length}
                         rowHeight={50}
                         rowRenderer={this.experimentRowRenderer} />
                 </div>
@@ -61,25 +111,25 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
         );
     }
 
-    private experimentRowRenderer(props: ListRowProps): React.ReactNode {
+    private experimentRowRenderer = (props: ListRowProps): React.ReactNode => {
         let traceName = '';
         let tracePath = '';
-        if (this.openedExperiments && this.openedExperiments.length && props.index < this.openedExperiments.length) {
-            traceName = this.openedExperiments[props.index].name;
+        if (this._openedExperiments && this._openedExperiments.length && props.index < this._openedExperiments.length) {
+            traceName = this._openedExperiments[props.index].name;
             // tracePath = this.openedTraces[props.index].path;
             /*
                 TODO: Implement better visualization of experiment, e.g. a tree
                 with experiment name as root and traces (name and path) as children
              */
             let prefix = '> ';
-            for (let i = 0; i < this.openedExperiments[props.index].traces.length; i++) {
+            for (let i = 0; i < this._openedExperiments[props.index].traces.length; i++) {
                 // tracePath = tracePath.concat(prefix).concat(this.openedExperiments[props.index].traces[i].path);
-                tracePath = tracePath.concat(prefix).concat(this.openedExperiments[props.index].traces[i].name);
+                tracePath = tracePath.concat(prefix).concat(this._openedExperiments[props.index].traces[i].name);
                 prefix = '\n> ';
             }
         }
         let traceContainerClassName = 'trace-element-container';
-        if (props.index === this.selectedExperimentIndex) {
+        if (props.index === this._selectedExperimentIndex) {
             traceContainerClassName = traceContainerClassName + ' theia-mod-selected';
         }
         this.handleShareButtonClick = this.handleShareButtonClick.bind(this);
@@ -103,41 +153,41 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     }
 
     private async updateOpenedExperiments() {
-        this.openedExperiments = await this.experimentManager.getOpenedExperiments();
-        const selectedIndex = this.openedExperiments.findIndex(experiment => this.selectedExperiment &&
+        this._openedExperiments = await this.experimentManager.getOpenedExperiments();
+        const selectedIndex = this._openedExperiments.findIndex(experiment => this.selectedExperiment &&
             experiment.UUID === this.selectedExperiment.UUID);
-        this.selectedExperimentIndex = selectedIndex !== -1 ? selectedIndex : 0;
+        this._selectedExperimentIndex = selectedIndex !== -1 ? selectedIndex : 0;
         this.update();
     }
 
     private handleShareButtonClick(index: number) {
-        const traceToShare = this.openedExperiments[index];
+        const traceToShare = this._openedExperiments[index];
         this._sharingLink = 'https://localhost:3000/share/trace?' + traceToShare.UUID;
-        this.showShareDialog = true;
+        this._showShareDialog = true;
         this.update();
     }
 
     private onExperimentSelected(index: number) {
-        TraceExplorerOpenedTracesWidget.experimentSelectedEmitter.fire(this.openedExperiments[index]);
+        TraceExplorerOpenedTracesWidget.experimentSelectedEmitter.fire(this._openedExperiments[index]);
         this.selectExperiment(index);
     }
 
     private selectExperiment(index: number) {
-        if (index >= 0 && index !== this.selectedExperimentIndex) {
-            this.selectedExperimentIndex = index;
+        if (index >= 0 && index !== this._selectedExperimentIndex) {
+            this._selectedExperimentIndex = index;
             this.lastSelectedOutputIndex = -1;
-            this.updateAvailableAnalysis(this.openedExperiments[index]);
+            this.updateAvailableAnalysis(this._openedExperiments[index]);
         }
     }
 
-    private async updateAvailableAnalysis(experiment: Experiment | undefined) {
+    private updateAvailableAnalysis = async (experiment: Experiment | undefined) => {
         if (experiment) {
             const outputs = await this.getOutputDescriptors(experiment);
-            this.availableOutputDescriptors.set(experiment.UUID, outputs);
+            this._availableOutputDescriptors.set(experiment.UUID, outputs);
         } else {
-            if (this.openedExperiments.length) {
-                const outputs = await this.getOutputDescriptors(this.openedExperiments[0]);
-                this.availableOutputDescriptors.set(this.openedExperiments[0].UUID, outputs);
+            if (this._openedExperiments.length) {
+                const outputs = await this.getOutputDescriptors(this._openedExperiments[0]);
+                this._availableOutputDescriptors.set(this._openedExperiments[0].UUID, outputs);
             }
         }
         this.update();
@@ -150,5 +200,17 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
             outputDescriptors.push(...descriptors);
         }
         return outputDescriptors;
+    }
+
+    private onWidgetActivated(experiment: Experiment) {
+        this.selectedExperiment = experiment;
+        const selectedIndex = this._openedExperiments.findIndex(openedExperiment => openedExperiment.UUID === experiment.UUID);
+        this.selectExperiment(selectedIndex);
+    }
+
+    private handleShareModalClose = () => {
+        this.showShareDialog = false;
+        this.sharingLink = '';
+        this.update();
     }
 }

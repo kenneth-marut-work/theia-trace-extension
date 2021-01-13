@@ -51,7 +51,7 @@ export class TraceExplorerWidget extends BaseWidget {
     // private FILE_NAVIGATOR_TITLE: string = 'File navigator';
     // private ANALYSIS_TITLE = 'Available Analysis';
 
-    private openedExperiments: Array<Experiment> = [];
+    // private openedExperiments: Array<Experiment> = [];
     // private selectedExperimentIndex = 0;
     // private lastSelectedOutputIndex = -1;
     // private availableOutputDescriptors: Map<string, OutputDescriptor[]> = new Map();
@@ -114,9 +114,9 @@ export class TraceExplorerWidget extends BaseWidget {
         this.title.label = TRACE_EXPLORER_LABEL;
         this.title.caption = TRACE_EXPLORER_LABEL;
         this.title.iconClass = 'trace-explorer-tab-icon';
-        signalManager().on(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
-        signalManager().on(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
-        signalManager().on(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
+        // signalManager().on(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
+        // signalManager().on(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
+        // signalManager().on(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
         signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
         this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.onWidgetActivated(experiment)));
 
@@ -129,48 +129,48 @@ export class TraceExplorerWidget extends BaseWidget {
         this.toDispose.push(this.viewContainer);
         const layout = this.layout = new PanelLayout();
         layout.addWidget(this.viewContainer);
-        this.initialize();
+        // this.initialize();
     }
 
     dispose() {
         super.dispose();
-        signalManager().off(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
-        signalManager().off(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
-        signalManager().off(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
+        // signalManager().off(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
+        // signalManager().off(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
+        // signalManager().off(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
         signalManager().off(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
     }
 
-    private onExperimentOpened(openedExperiment: Experiment) {
-        this.updateOpenedExperiments();
-        this.updateAvailableAnalysis(openedExperiment);
-    }
+    // private onExperimentOpened(openedExperiment: Experiment) {
+    //     this.updateOpenedExperiments();
+    //     this.updateAvailableAnalysis(openedExperiment);
+    // }
 
-    private onExperimentClosed(_closedExperiment: Experiment) {
-        this.tooltipWidget.tooltip = {};
-        this.updateOpenedExperiments();
-        this.updateAvailableAnalysis(undefined);
-    }
+    // private onExperimentClosed(_closedExperiment: Experiment) {
+    //     this.tooltipWidget.tooltip = {};
+    //     this.updateOpenedExperiments();
+    //     this.updateAvailableAnalysis(undefined);
+    // }
 
     private onTooltip(tooltip: { [key: string]: string }) {
         this.tooltipWidget.tooltip = tooltip;
         this.update();
     }
 
-    async initialize(): Promise<void> {
-        this.updateOpenedExperiments();
-        this.updateAvailableAnalysis(undefined);
-    }
+    // async initialize(): Promise<void> {
+    //     this.updateOpenedExperiments();
+    //     this.updateAvailableAnalysis(undefined);
+    // }
 
     private async handleOpenTrace() {
         this.traceViewerContribution.openDialog();
     }
 
     protected render(): React.ReactNode {
-        this.updateOpenedExperiments = this.updateOpenedExperiments.bind(this);
-        this.updateAvailableAnalysis = this.updateAvailableAnalysis.bind(this);
-        this.experimentRowRenderer = this.experimentRowRenderer.bind(this);
-        this.outputsRowRenderer = this.outputsRowRenderer.bind(this);
-        this.handleShareModalClose = this.handleShareModalClose.bind(this);
+        // this.updateOpenedExperiments = this.updateOpenedExperiments.bind(this);
+        // this.updateAvailableAnalysis = this.updateAvailableAnalysis.bind(this);
+        // this.experimentRowRenderer = this.experimentRowRenderer.bind(this);
+        // this.outputsRowRenderer = this.outputsRowRenderer.bind(this);
+        // this.handleShareModalClose = this.handleShareModalClose.bind(this);
         this.handleOpenTrace = this.handleOpenTrace.bind(this);
 
         let outputsRowCount = 0;
@@ -181,7 +181,7 @@ export class TraceExplorerWidget extends BaseWidget {
             }
 
             return <div className='trace-explorer-container'>
-                <ReactModal isOpen={this.showShareDialog} onRequestClose={this.handleShareModalClose}
+                <ReactModal isOpen={this.openedTracesWidget.showShareDialog} onRequestClose={this.handleShareModalClose}
                     ariaHideApp={false} className='sharing-modal' overlayClassName='sharing-overlay'>
                     {this.renderSharingModal()}
                 </ReactModal>
@@ -390,11 +390,11 @@ export class TraceExplorerWidget extends BaseWidget {
     //     this.update();
     // }
 
-    private handleShareModalClose() {
-        this.showShareDialog = false;
-        this.sharingLink = '';
-        this.update();
-    }
+    // private handleShareModalClose = () => {
+    //     this.showShareDialog = false;
+    //     this.sharingLink = '';
+    //     this.update();
+    // }
 
     // private outputsRowRenderer(props: ListRowProps): React.ReactNode {
     //     let outputName = '';
@@ -421,15 +421,15 @@ export class TraceExplorerWidget extends BaseWidget {
     //     </div>;
     // }
 
-    private outputClicked(index: number) {
-        this.lastSelectedOutputIndex = index;
-        const trace = this.openedExperiments[this.selectedExperimentIndex];
-        const outputs = this.availableOutputDescriptors.get(trace.UUID);
-        if (outputs) {
-            TraceExplorerWidget.outputAddedEmitter.fire(new OutputAddedSignalPayload(outputs[index], trace));
-        }
-        this.update();
-    }
+    // private outputClicked(index: number) {
+    //     this.lastSelectedOutputIndex = index;
+    //     const trace = this.openedExperiments[this.selectedExperimentIndex];
+    //     const outputs = this.availableOutputDescriptors.get(trace.UUID);
+    //     if (outputs) {
+    //         TraceExplorerWidget.outputAddedEmitter.fire(new OutputAddedSignalPayload(outputs[index], trace));
+    //     }
+    //     this.update();
+    // }
 
     // private async updateOpenedExperiments() {
     //     this.openedExperiments = await this.experimentManager.getOpenedExperiments();
