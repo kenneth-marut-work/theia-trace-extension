@@ -48,7 +48,7 @@ export default new ContainerModule(bind => {
             child.bind(TraceViewerWidgetOptions).toConstantValue(options);
             return child.get(TraceViewerWidget);
         }
-    }));
+    })).inSingletonScope();
 
     bind(TraceViewerContribution).toSelf().inSingletonScope();
     [CommandContribution, OpenHandler, FrontendApplicationContribution].forEach(serviceIdentifier =>
