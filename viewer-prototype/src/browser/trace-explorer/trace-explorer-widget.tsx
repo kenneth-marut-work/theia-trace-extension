@@ -18,7 +18,7 @@ import { TraceViewerWidget } from '../trace-viewer/trace-viewer';
 import { TraceViewerContribution } from '../trace-viewer/trace-viewer-contribution';
 
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
-import { PreferenceMenus } from './trace-explorer-contribution';
+import { PreferenceMenus } from './trace-explorer-constants';
 
 export const TRACE_EXPLORER_ID = 'trace-explorer';
 export const TRACE_EXPLORER_LABEL = 'Trace Explorer';
@@ -127,12 +127,13 @@ export class TraceExplorerWidget extends ReactWidget {
     }
 
     protected handleContextMenuEvent = (event: React.MouseEvent<HTMLDivElement, MouseEvent>): void => {
+        event.preventDefault();
         const target = (event.target as HTMLElement);
         const domRect = target.getBoundingClientRect();
         this.contextMenuRenderer.render({
             menuPath: PreferenceMenus.PREFERENCE_EDITOR_CONTEXT_MENU,
             anchor: { x: domRect.left, y: domRect.bottom },
-            args: []
+            // args: []
         });
     }
 

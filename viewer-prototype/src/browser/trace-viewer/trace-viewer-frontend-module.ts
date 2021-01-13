@@ -46,7 +46,7 @@ export default new ContainerModule(bind => {
     );
 
     bindViewContribution(bind, TraceExplorerContribution);
-    bind(TraceExplorerWidget).toSelf();
+    bind(TraceExplorerWidget).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TraceExplorerContribution);
     bind(WidgetFactory).toDynamicValue(context => ({
         id: TRACE_EXPLORER_ID,
