@@ -1,20 +1,4 @@
 import { injectable, inject, postConstruct } from 'inversify';
-// import * as React from 'react';
-// import { List, ListRowProps } from 'react-virtualized';
-// import { OutputDescriptor } from 'tsp-typescript-client/lib/models/output-descriptor';
-// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// import { /* faShareSquare, */ faCopy } from '@fortawesome/free-solid-svg-icons';
-// import ReactModal from 'react-modal';
-// import { Emitter } from '@theia/core';
-// import { EditorManager } from '@theia/editor/lib/browser';
-// import URI from '@theia/core/lib/common/uri';
-// import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
-// import { ExperimentManager } from '@trace-viewer/base/lib/experiment-manager';
-// import { TspClientProvider } from '../tsp-client-provider';
-// import { signalManager, Signals } from '@trace-viewer/base/lib/signal-manager';
-/* FIXME: This may cause Circular dependency between trace-viewer and trace-explorer-widget */
-// import { TraceViewerWidget } from '../trace-viewer/trace-viewer';
-// import { TraceViewerContribution } from '../trace-viewer/trace-viewer-contribution';
 import { TraceExplorerAnalysisWidget } from './trace-explorer-sub-widgets/trace-explorer-analysis-widget';
 import { ViewContainer, BaseWidget, Message, PanelLayout } from '@theia/core/lib/browser';
 import { TraceExplorerTooltipWidget } from './trace-explorer-sub-widgets/trace-explorer-tooltip-widget';
@@ -26,7 +10,6 @@ export const TRACE_EXPLORER_ID = 'trace-explorer';
 
 
 @injectable()
-// export class TraceExplorerWidget extends ReactWidget {
 export class TraceExplorerWidget extends BaseWidget {
     // @inject(TraceViewerContribution)
     // protected readonly traceViewerContribution!: TraceViewerContribution;
@@ -54,45 +37,12 @@ export class TraceExplorerWidget extends BaseWidget {
     // public static experimentSelectedSignal = TraceExplorerWidget.experimentSelectedEmitter.event;
 
     protected traceViewsContainer!: ViewContainer;
-
-    // static createContainer(parent: interfaces.Container): Container {
-    //     const child = new Container({ defaultScope: 'Singleton' });
-    //     child.parent = parent;
-    //     child.bind(TraceExplorerOpenedTracesWidget).toSelf().inSingletonScope();
-    //     child.bind(TraceExplorerAnalysisWidget).toSelf().inSingletonScope();
-    //     child.bind(TraceExplorerTooltipWidget).toSelf().inSingletonScope();
-    //     child.bind(TraceExplorerPlaceholderWidget).toSelf().inSingletonScope();
-    //     child.bind(TraceExplorerWidget).toSelf().inSingletonScope();
-    //     return child;
-    // }
-
-    // static createWidget(parent: interfaces.Container): TraceExplorerWidget {
-    //     return TraceExplorerWidget.createContainer(parent).get(TraceExplorerWidget);
-    // }
-
     @inject(TraceExplorerAnalysisWidget) protected readonly analysisWidget!: TraceExplorerAnalysisWidget;
     @inject(TraceExplorerOpenedTracesWidget) protected readonly openedTracesWidget!: TraceExplorerOpenedTracesWidget;
     @inject(TraceExplorerTooltipWidget) protected readonly tooltipWidget!: TraceExplorerTooltipWidget;
     @inject(TraceExplorerPlaceholderWidget) protected readonly placeholderWidget!: TraceExplorerPlaceholderWidget;
     @inject(ViewContainer.Factory) protected readonly viewContainerFactory!: ViewContainer.Factory;
 
-    // constructor(
-    // ) {
-    // super();
-    // this.id = TRACE_EXPLORER_ID;
-    // this.title.label = TRACE_EXPLORER_LABEL;
-    // this.title.caption = TRACE_EXPLORER_LABEL;
-    // this.title.iconClass = 'trace-explorer-tab-icon';
-    // this.experimentManager = this.tspClientProvider.getExperimentManager();
-    // signalManager().on(Signals.EXPERIMENT_OPENED, ({ experiment }) => this.onExperimentOpened(experiment));
-    // signalManager().on(Signals.EXPERIMENT_CLOSED, ({ experiment }) => this.onExperimentClosed(experiment));
-    // signalManager().on(Signals.EXPERIMENT_SELECTED, ({ experiment }) => this.onWidgetActivated(experiment));
-    // signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
-    // this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.onWidgetActivated(experiment)));
-    // this.tspClientProvider.addTspClientChangeListener(tspClient => {
-    //     this.experimentManager = this.tspClientProvider.getExperimentManager();
-    // });
-    // }
 
     @postConstruct()
     init(): void {

@@ -1,5 +1,5 @@
 import { inject, injectable, postConstruct } from 'inversify';
-import { ReactWidget, Widget } from "@theia/core/lib/browser";
+import { ReactWidget, Widget, Message } from "@theia/core/lib/browser";
 import * as React from 'react';
 import { List, ListRowProps } from 'react-virtualized';
 import { TraceExplorerOpenedTracesWidget } from './trace-explorer-opened-traces-widget';
@@ -94,8 +94,13 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
         this.update();
     }
 
-    onResize(msg: Widget.ResizeMessage): void {
+    protected onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
+        this.update();
+    }
+
+    protected onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
         this.update();
     }
 }

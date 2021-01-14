@@ -12,8 +12,6 @@ import { TraceExplorerTooltipWidget } from './trace-explorer-tooltip-widget';
 import ReactModal from 'react-modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy } from '@fortawesome/free-solid-svg-icons';
-// import { TraceViewerWidget } from '../../trace-viewer/trace-viewer';
-
 
 
 @injectable()
@@ -84,7 +82,6 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
         this.tspClientProvider.addTspClientChangeListener(tspClient => {
             this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
-        // this.toDispose.push(TraceViewerWidget.widgetActivatedSignal(experiment => this.onWidgetActivated(experiment)));
 
         this.initialize();
         this.update();
@@ -273,5 +270,10 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.updateRequestEmitter.fire();
+    }
+
+    onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
+        this.updateOpenedExperiments();
     }
 }

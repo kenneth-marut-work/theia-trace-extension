@@ -1,5 +1,5 @@
 import { inject, injectable, postConstruct } from 'inversify';
-import { ReactWidget } from "@theia/core/lib/browser";
+import { ReactWidget, Message } from "@theia/core/lib/browser";
 import * as React from 'react';
 import { EditorOpenerOptions, EditorManager } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
@@ -25,17 +25,16 @@ export class TraceExplorerTooltipWidget extends ReactWidget {
         this.id = TraceExplorerTooltipWidget.ID;
         this.title.label = TraceExplorerTooltipWidget.LABEL;
         signalManager().on(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip))
+        this.handleSourcecodeLockup = this.handleSourcecodeLockup.bind(this);
         this.update();
     }
 
     dispose() {
         super.dispose();
         signalManager().off(Signals.TOOLTIP_UPDATED, ({ tooltip }) => this.onTooltip(tooltip));
-
     }
 
     private renderTooltip() {
-        this.handleSourcecodeLockup = this.handleSourcecodeLockup.bind(this);
         const tooltipArray: JSX.Element[] = [];
         if (this._tooltip) {
             const keys = Object.keys(this._tooltip);
@@ -119,6 +118,11 @@ export class TraceExplorerTooltipWidget extends ReactWidget {
 
     private onTooltip(tooltip: { [key: string]: string }) {
         this.tooltip = tooltip;
+        this.update();
+    }
+
+    protected onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
         this.update();
     }
 }
