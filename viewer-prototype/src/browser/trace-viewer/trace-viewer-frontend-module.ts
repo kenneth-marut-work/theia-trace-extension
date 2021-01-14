@@ -5,13 +5,11 @@ import { TraceViewerContribution } from './trace-viewer-contribution';
 import { TraceViewerEnvironment } from '../../common/trace-viewer-environment';
 import { TraceServerUrlProvider } from '../../common/trace-server-url-provider';
 import { CommandContribution } from '@theia/core/lib/common';
-
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-balham-dark.css';
 import 'ag-grid-community/dist/styles/ag-theme-balham.css';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-// import 'semantic-ui-css/semantic.min.css';
 import { TraceExplorerContribution } from '../trace-explorer/trace-explorer-contribution';
 import { TRACE_EXPLORER_ID, TraceExplorerWidget } from '../trace-explorer/trace-explorer-widget';
 import { TspClientProvider } from '../tsp-client-provider';
@@ -22,8 +20,6 @@ import { TraceExplorerOpenedTracesWidget } from '../trace-explorer/trace-explore
 import { TraceExplorerAnalysisWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-analysis-widget';
 import { TraceExplorerTooltipWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-tooltip-widget';
 import { TraceExplorerPlaceholderWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-placeholder-widget';
-// import { TracePropertiesContribution } from '../trace-properties-view/trace-properties-view-contribution';
-// import { TracePropertiesWidget, TRACE_PROPERTIES_ID } from '../trace-properties-view/trace-properties-view-widget';
 
 export default new ContainerModule(bind => {
     
@@ -62,14 +58,6 @@ export default new ContainerModule(bind => {
         id: TRACE_EXPLORER_ID,
         createWidget: () => context.container.get<TraceExplorerWidget>(TraceExplorerWidget)
     }));
-
-    // bind(WidgetFactory).toDynamicValue(context => ({
-    //     id: TRACE_EXPLORER_ID,
-    //     // createWidget: (): TraceExplorerWidget => TraceExplorerWidget.createWidget(context.container)
-    //     createWidget: (): () => context.
-    // })).inSingletonScope();
-
-    // bind(TraceExplorerWidget).toSelf().inSingletonScope();
 
     bind(TraceServerConnectionStatusService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TraceServerConnectionStatusService);

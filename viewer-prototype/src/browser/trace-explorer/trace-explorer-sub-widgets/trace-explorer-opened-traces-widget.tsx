@@ -1,5 +1,5 @@
 import { inject, injectable, postConstruct } from 'inversify';
-import { ReactWidget, Message } from "@theia/core/lib/browser";
+import { ReactWidget, Message, Widget } from "@theia/core/lib/browser";
 import * as React from 'react';
 import { List, ListRowProps } from 'react-virtualized';
 import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
@@ -18,6 +18,7 @@ import { faCopy } from '@fortawesome/free-solid-svg-icons';
 export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     static ID = 'trace-explorer-opened-traces-widget';
     static LABEL = 'Opened Traces';
+    static LIST_MARGIN = 2;
 
     protected experimentSelectedEmitter = new Emitter<Experiment>();
     experimentSelectedSignal = this.experimentSelectedEmitter.event;
@@ -130,7 +131,7 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
                         onClick={this.updateOpenedExperiments}>
                         <List
                             height={clientHeight}
-                            width={clientWidth}
+                            width={clientWidth - TraceExplorerOpenedTracesWidget.LIST_MARGIN}
                             rowCount={this._openedExperiments.length}
                             rowHeight={50}
                             rowRenderer={this.experimentRowRenderer} />
@@ -157,13 +158,13 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
                 prefix = '\n> ';
             }
         }
-        let traceContainerClassName = 'trace-element-container';
+        let traceContainerClassName = 'trace-list-container';
         if (props.index === this._selectedExperimentIndex) {
             traceContainerClassName = traceContainerClassName + ' theia-mod-selected';
         }
         this.handleShareButtonClick = this.handleShareButtonClick.bind(this);
-        return <div className='trace-list-container' key={props.key} style={props.style}>
-            <div className={traceContainerClassName}>
+        return <div className={traceContainerClassName} key={props.key} style={props.style}>
+            <div className='trace-element-container'>
                 <div className='trace-element-info' onClick={this.onExperimentSelected.bind(this, props.index)}>
                     <div className='trace-element-name'>
                         {traceName}
@@ -267,12 +268,17 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
         this.update();
     }
 
-    onUpdateRequest(msg: Message): void {
+    protected onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
+        this.update();
+    }
+
+    protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.updateRequestEmitter.fire();
     }
 
-    onAfterShow(msg: Message): void {
+    protected onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.updateOpenedExperiments();
     }

@@ -19,9 +19,6 @@ import { signalManager } from '@trace-viewer/base/lib/signal-manager';
 import { TraceExplorerOpenedTracesWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
 import { TraceExplorerAnalysisWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-analysis-widget';
 import { OutputAddedSignalPayload } from '../trace-explorer/output-added-signal-payload';
-// import { TraceExplorerAnalysisWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-analysis-widget';
-// import { TraceExplorerOpenedTracesWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
-// import { TraceExplorerAnalysisWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-analysis-widget';
 
 export const TraceViewerWidgetOptions = Symbol('TraceViewerWidgetOptions');
 export interface TraceViewerWidgetOptions {
@@ -78,6 +75,8 @@ export class TraceViewerWidget extends ReactWidget {
             this.traceManager = this.tspClientProvider.getTraceManager();
             this.experimentManager = this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
+        // Make node focusable so it can achieve focus on activate (avoid warning);
+        this.node.tabIndex = 0;
     }
 
     @postConstruct()
@@ -156,7 +155,6 @@ export class TraceViewerWidget extends ReactWidget {
                         this.id = experiment.UUID;
 
                         if (this.isVisible) {
-                            // TraceViewerWidget.widgetActivatedEmitter.fire(experiment);
                             this.openedTracesWidget.onWidgetActivated(experiment);
                         }
                     }
@@ -183,7 +181,6 @@ export class TraceViewerWidget extends ReactWidget {
     onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         if (this.openedExperiment) {
-            // TraceViewerWidget.widgetActivatedEmitter.fire(this.openedExperiment);
             this.openedTracesWidget.onWidgetActivated(this.openedExperiment);
         }
     }
@@ -191,10 +188,9 @@ export class TraceViewerWidget extends ReactWidget {
     onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.openedExperiment) {
-            // TraceViewerWidget.widgetActivatedEmitter.fire(this.openedExperiment);
             this.openedTracesWidget.onWidgetActivated(this.openedExperiment);
         }
-
+        this.node.focus();
     }
 
     protected onResize(): void {

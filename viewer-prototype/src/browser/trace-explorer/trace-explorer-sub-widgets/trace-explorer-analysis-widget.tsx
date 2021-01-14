@@ -10,6 +10,7 @@ import { OutputAddedSignalPayload } from '../output-added-signal-payload';
 export class TraceExplorerAnalysisWidget extends ReactWidget {
     static ID = 'trace-explorer-analysis-widget';
     static LABEL = 'Available Analysis';
+    static LIST_MARGIN = 2;
 
     protected outputAddedEmitter = new Emitter<OutputAddedSignalPayload>();
     outputAddedSignal = this.outputAddedEmitter.event;
@@ -43,7 +44,7 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
                 <div className='trace-explorer-panel-content'>
                     <List
                         height={clientHeight}
-                        width={clientWidth}
+                        width={clientWidth - TraceExplorerAnalysisWidget.LIST_MARGIN}
                         rowCount={outputsRowCount}
                         rowHeight={50}
                         rowRenderer={this.outputsRowRenderer} />
