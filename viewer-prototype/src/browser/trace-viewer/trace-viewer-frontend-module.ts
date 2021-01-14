@@ -1,10 +1,5 @@
 import { ContainerModule, Container } from 'inversify';
-import { WidgetFactory, OpenHandler, FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
-import { TraceViewerWidget, TraceViewerWidgetOptions } from './trace-viewer';
-import { TraceViewerContribution } from './trace-viewer-contribution';
-import { TraceViewerEnvironment } from '../../common/trace-viewer-environment';
-import { TraceServerUrlProvider } from '../../common/trace-server-url-provider';
-import { CommandContribution } from '@theia/core/lib/common';
+
 
 import 'ag-grid-community/dist/styles/ag-grid.css';
 import 'ag-grid-community/dist/styles/ag-theme-balham-dark.css';
@@ -18,6 +13,12 @@ import { TspClientProvider } from '../tsp-client-provider';
 import { TheiaMessageManager } from '../theia-message-manager';
 import { TraceServerConnectionStatusService, TraceServerConnectionStatusContribution } from '../../browser/trace-server-status';
 import { TraceServerUrlProviderImpl } from '../trace-server-url-provider-frontend-impl';
+import { TraceViewerEnvironment } from '../../common/trace-viewer-environment';
+import { FrontendApplicationContribution, WidgetFactory, OpenHandler } from '@theia/core/lib/browser';
+import { TraceServerUrlProvider } from '../../common/trace-server-url-provider';
+import { TraceViewerWidget, TraceViewerWidgetOptions } from './trace-viewer';
+import { TraceViewerContribution } from './trace-viewer-contribution';
+import { CommandContribution, MenuContribution } from '@theia/core';
 // import { TracePropertiesContribution } from '../trace-properties-view/trace-properties-view-contribution';
 // import { TracePropertiesWidget, TRACE_PROPERTIES_ID } from '../trace-properties-view/trace-properties-view-widget';
 
@@ -41,17 +42,23 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
 
     bind(TraceViewerContribution).toSelf().inSingletonScope();
-    [CommandContribution, OpenHandler, FrontendApplicationContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toService(TraceViewerContribution)
-    );
+    // [CommandContribution, OpenHandler, FrontendApplicationContribution].forEach(serviceIdentifier =>
+    //     bind(serviceIdentifier).toService(TraceViewerContribution)
+    // );
+    bind(CommandContribution).to(TraceViewerContribution);
+    bind(OpenHandler).to(TraceViewerContribution);
+    bind(FrontendApplicationContribution).to(TraceViewerContribution);
 
-    bindViewContribution(bind, TraceExplorerContribution);
-    bind(TraceExplorerWidget).toSelf().inSingletonScope();
+    // bindViewContribution(bind, TraceExplorerContribution);
+    bind(TraceExplorerContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(TraceExplorerContribution);
+    bind(MenuContribution).toService(TraceExplorerContribution);
     bind(FrontendApplicationContribution).toService(TraceExplorerContribution);
+    bind(TraceExplorerWidget).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: TRACE_EXPLORER_ID,
         createWidget: () => context.container.get<TraceExplorerWidget>(TraceExplorerWidget)
-    }));
+    })).inSingletonScope();
 
     bind(TraceServerConnectionStatusService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(TraceServerConnectionStatusService);

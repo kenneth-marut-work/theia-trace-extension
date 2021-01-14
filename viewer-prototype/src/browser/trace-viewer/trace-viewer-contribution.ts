@@ -1,4 +1,4 @@
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { Command, CommandRegistry, CommandContribution } from '@theia/core';
 import { WidgetOpenHandler } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
@@ -28,6 +28,11 @@ export class TraceViewerContribution extends WidgetOpenHandler<TraceViewerWidget
 
     readonly id = TraceViewerWidget.ID;
     readonly label = TraceViewerCommands.OPEN.label;
+
+    @postConstruct()
+    init(): void {
+        console.log('SENTINEL VEIWER');
+    }
 
     protected createWidgetOptions(uri: URI): TraceViewerWidgetOptions {
         return {
