@@ -11,7 +11,7 @@ import 'ag-grid-community/dist/styles/ag-theme-balham.css';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { TraceExplorerContribution } from '../trace-explorer/trace-explorer-contribution';
-import { TRACE_EXPLORER_ID, TraceExplorerWidget } from '../trace-explorer/trace-explorer-widget';
+import { TraceExplorerWidget } from '../trace-explorer/trace-explorer-widget';
 import { TspClientProvider } from '../tsp-client-provider';
 import { TheiaMessageManager } from '../theia-message-manager';
 import { TraceServerConnectionStatusService, TraceServerConnectionStatusContribution } from '../../browser/trace-server-status';
@@ -37,17 +37,19 @@ export default new ContainerModule(bind => {
             return child.get(TraceViewerWidget);
         }
     })).inSingletonScope();
+
     bind(TraceViewerContribution).toSelf().inSingletonScope();
     [CommandContribution, OpenHandler, FrontendApplicationContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(TraceViewerContribution)
     );
+
     bindViewContribution(bind, TraceExplorerContribution);
     bind(FrontendApplicationContribution).toService(TraceExplorerContribution);
-    bind(TraceExplorerWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
-        id: TRACE_EXPLORER_ID,
+        id: TraceExplorerWidget.ID,
         createWidget: () => TraceExplorerWidget.createWidget(context.container)
-    }));
+    })).inSingletonScope();
+
     bind(TraceServerConfigService).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         return connection.createProxy<TraceServerConfigService>(traceServerPath);

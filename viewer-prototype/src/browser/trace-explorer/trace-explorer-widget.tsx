@@ -8,12 +8,10 @@ import { OutputAddedSignalPayload } from './output-added-signal-payload';
 import { Event } from '@theia/core';
 import { Experiment } from 'tsp-typescript-client/lib/models/experiment';
 
-
-export const TRACE_EXPLORER_LABEL = 'Trace Explorer';
-export const TRACE_EXPLORER_ID = 'trace-explorer';
-
 @injectable()
 export class TraceExplorerWidget extends BaseWidget {
+    static LABEL = 'Trace Explorer';
+    static ID = 'trace-explorer';
     protected traceViewsContainer!: ViewContainer;
     @inject(TraceExplorerAnalysisWidget) protected readonly analysisWidget!: TraceExplorerAnalysisWidget;
     @inject(TraceExplorerOpenedTracesWidget) protected readonly openedTracesWidget!: TraceExplorerOpenedTracesWidget;
@@ -21,11 +19,17 @@ export class TraceExplorerWidget extends BaseWidget {
     @inject(TraceExplorerPlaceholderWidget) protected readonly placeholderWidget!: TraceExplorerPlaceholderWidget;
     @inject(ViewContainer.Factory) protected readonly viewContainerFactory!: ViewContainer.Factory;
 
-    outputAddedSignal: Event<OutputAddedSignalPayload>;
-    experimentSelectedSignal: Event<Experiment>;
-    onOpenedTracesWidgetActivated: (experiment: Experiment) => void;
-    
+    get outputAddedSignal(): Event<OutputAddedSignalPayload> {
+        return this.analysisWidget.outputAddedSignal;
+    }
 
+    get experimentSelectedSignal(): Event<Experiment> {
+        return this.openedTracesWidget.experimentSelectedSignal;
+    }
+
+    get onOpenedTracesWidgetActivated(): (experiment: Experiment) => void {
+        return this.openedTracesWidget.onWidgetActivated;
+    }
 
     static createWidget(parent: interfaces.Container): TraceExplorerWidget {
         return TraceExplorerWidget.createContainer(parent).get(TraceExplorerWidget);
@@ -34,19 +38,19 @@ export class TraceExplorerWidget extends BaseWidget {
     static createContainer(parent: interfaces.Container): Container {
         const child = new Container({ defaultScope: 'Singleton' });
         child.parent = parent;
-        child.bind(TraceExplorerWidget).toSelf();
         child.bind(TraceExplorerAnalysisWidget).toSelf();
         child.bind(TraceExplorerOpenedTracesWidget).toSelf();
         child.bind(TraceExplorerPlaceholderWidget).toSelf();
         child.bind(TraceExplorerTooltipWidget).toSelf();
+        child.bind(TraceExplorerWidget).toSelf().inSingletonScope();
         return child;
     }
 
     @postConstruct()
     init(): void {
-        this.id = TRACE_EXPLORER_ID;
-        this.title.label = TRACE_EXPLORER_LABEL;
-        this.title.caption = TRACE_EXPLORER_LABEL;
+        this.id = TraceExplorerWidget.ID;
+        this.title.label = TraceExplorerWidget.LABEL;
+        this.title.caption = TraceExplorerWidget.LABEL;
         this.title.iconClass = 'trace-explorer-tab-icon';
         this.title.closable = true;
         this.toDispose.push(this.openedTracesWidget.widgetWasUpdated(() => this.update()));
@@ -60,9 +64,6 @@ export class TraceExplorerWidget extends BaseWidget {
         const layout = this.layout = new PanelLayout();
         layout.addWidget(this.placeholderWidget);
         layout.addWidget(this.traceViewsContainer);
-        this.outputAddedSignal = this.analysisWidget.outputAddedSignal;
-        this.experimentSelectedSignal = this.openedTracesWidget.experimentSelectedSignal;
-        this.onOpenedTracesWidgetActivated = this.openedTracesWidget.onWidgetActivated;
         this.node.tabIndex = 0;
         this.update();
     }

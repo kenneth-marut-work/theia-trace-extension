@@ -1,6 +1,6 @@
 import { MessageService, Path } from '@theia/core';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
-import { ApplicationShell, Message, StatusBar } from '@theia/core/lib/browser';
+import { ApplicationShell, Message, StatusBar, WidgetManager } from '@theia/core/lib/browser';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { inject, injectable, postConstruct } from 'inversify';
 import * as React from 'react';
@@ -16,9 +16,8 @@ import URI from '@theia/core/lib/common/uri';
 import { TheiaMessageManager } from '../theia-message-manager';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { signalManager } from '@trace-viewer/base/lib/signal-manager';
-import { TraceExplorerOpenedTracesWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
-import { TraceExplorerAnalysisWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-analysis-widget';
 import { OutputAddedSignalPayload } from '../trace-explorer/output-added-signal-payload';
+import { TraceExplorerWidget } from '../trace-explorer/trace-explorer-widget';
 
 export const TraceViewerWidgetOptions = Symbol('TraceViewerWidgetOptions');
 export interface TraceViewerWidgetOptions {
@@ -30,7 +29,7 @@ export class TraceViewerWidget extends ReactWidget {
     static ID = 'trace-viewer';
     static LABEL = 'Trace Viewer';
 
-    protected readonly uri: Path;
+    protected uri: Path;
     private openedExperiment: Experiment | undefined;
     private outputDescriptors: OutputDescriptor[] = [];
     private tspClient: TspClient;
@@ -43,19 +42,19 @@ export class TraceViewerWidget extends ReactWidget {
         this.resizeHandlers.push(h);
     };
 
-    @inject(TraceExplorerOpenedTracesWidget) protected readonly openedTracesWidget!: TraceExplorerOpenedTracesWidget;
-    @inject(TraceExplorerAnalysisWidget) protected readonly analysisWidget!: TraceExplorerAnalysisWidget;
+    protected explorerWidget: TraceExplorerWidget;
 
-    constructor(
-        @inject(TraceViewerWidgetOptions) protected readonly options: TraceViewerWidgetOptions,
-        @inject(TspClientProvider) private tspClientProvider: TspClientProvider,
-        @inject(StatusBar) private statusBar: StatusBar,
-        @inject(FileSystem) private readonly fileSystem: FileSystem,
-        @inject(ApplicationShell) protected readonly shell: ApplicationShell,
-        @inject(TheiaMessageManager) private readonly _signalHandler: TheiaMessageManager,
-        @inject(MessageService) protected readonly messageService: MessageService,
-    ) {
-        super();
+    @inject(WidgetManager) protected readonly widgetManager: WidgetManager
+    @inject(TraceViewerWidgetOptions) protected readonly options: TraceViewerWidgetOptions;
+    @inject(TspClientProvider) private tspClientProvider: TspClientProvider;
+    @inject(StatusBar) private statusBar: StatusBar;
+    @inject(FileSystem) private readonly fileSystem: FileSystem;
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
+    @inject(TheiaMessageManager) private readonly _signalHandler: TheiaMessageManager;
+    @inject(MessageService) protected readonly messageService: MessageService;
+    
+    @postConstruct()
+    async init(): Promise<void> {
         this.uri = new Path(this.options.traceURI);
         this.id = 'theia-traceOpen';
         this.title.label = 'Trace: ' + this.uri.base;
@@ -72,14 +71,11 @@ export class TraceViewerWidget extends ReactWidget {
             this.traceManager = this.tspClientProvider.getTraceManager();
             this.experimentManager = this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
+        this.explorerWidget = await this.widgetManager.getOrCreateWidget(TraceExplorerWidget.ID);
         // Make node focusable so it can achieve focus on activate (avoid warning);
         this.node.tabIndex = 0;
-    }
-
-    @postConstruct()
-    init(): void {
-        this.toDispose.push(this.analysisWidget.outputAddedSignal(output => this.onOutputAdded(output)));
-        this.toDispose.push(this.openedTracesWidget.experimentSelectedSignal(experiment => this.onExperimentSelected(experiment)));
+        // this.toDispose.push(this.analysisWidget.outputAddedSignal(output => this.onOutputAdded(output)));
+        // this.toDispose.push(this.openedTracesWidget.experimentSelectedSignal(experiment => this.onExperimentSelected(experiment)));
     }
 
     private updateBackgroundTheme() {
@@ -152,7 +148,7 @@ export class TraceViewerWidget extends ReactWidget {
                         this.id = experiment.UUID;
 
                         if (this.isVisible) {
-                            this.openedTracesWidget.onWidgetActivated(experiment);
+                            // this.openedTracesWidget.onWidgetActivated(experiment);
                         }
                     }
 
@@ -178,14 +174,14 @@ export class TraceViewerWidget extends ReactWidget {
     onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         if (this.openedExperiment) {
-            this.openedTracesWidget.onWidgetActivated(this.openedExperiment);
+            // this.openedTracesWidget.onWidgetActivated(this.openedExperiment);
         }
     }
 
     onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.openedExperiment) {
-            this.openedTracesWidget.onWidgetActivated(this.openedExperiment);
+            // this.openedTracesWidget.onWidgetActivated(this.openedExperiment);
         }
         this.node.focus();
     }

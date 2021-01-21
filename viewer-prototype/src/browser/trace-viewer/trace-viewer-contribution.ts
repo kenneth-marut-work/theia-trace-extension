@@ -16,7 +16,7 @@ export class TraceViewerContribution extends WidgetOpenHandler<TraceViewerWidget
     protected readonly workspaceService!: WorkspaceService;
 
     readonly id = TraceViewerWidget.ID;
-    readonly label = OpenTraceCommand.label;
+    readonly label = 'Trace Viewer';
 
     protected createWidgetOptions(uri: URI): TraceViewerWidgetOptions {
         return {
