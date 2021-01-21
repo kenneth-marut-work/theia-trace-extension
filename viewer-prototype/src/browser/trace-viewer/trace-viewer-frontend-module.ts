@@ -18,10 +18,6 @@ import { TraceServerConnectionStatusService, TraceServerConnectionStatusContribu
 import { TraceServerUrlProviderImpl } from '../trace-server-url-provider-frontend-impl';
 import { bindTraceServerPreferences } from '../trace-server-bindings';
 import { TraceServerConfigService, traceServerPath } from '../../common/trace-server-config';
-import { TraceExplorerOpenedTracesWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-opened-traces-widget';
-import { TraceExplorerAnalysisWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-analysis-widget';
-import { TraceExplorerTooltipWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-tooltip-widget';
-import { TraceExplorerPlaceholderWidget } from '../trace-explorer/trace-explorer-sub-widgets/trace-explorer-placeholder-widget';
 
 export default new ContainerModule(bind => {
     bind(TraceViewerEnvironment).toSelf().inRequestScope();
@@ -30,10 +26,7 @@ export default new ContainerModule(bind => {
     bind(TraceServerUrlProvider).toService(TraceServerUrlProviderImpl);
     bind(TspClientProvider).toSelf().inSingletonScope();
     bind(TheiaMessageManager).toSelf().inSingletonScope();
-    bind(TraceExplorerAnalysisWidget).toSelf().inSingletonScope();
-    bind(TraceExplorerOpenedTracesWidget).toSelf().inSingletonScope();
-    bind(TraceExplorerTooltipWidget).toSelf().inSingletonScope();
-    bind(TraceExplorerPlaceholderWidget).toSelf().inSingletonScope();
+
     bind(TraceViewerWidget).toSelf();
     bind<WidgetFactory>(WidgetFactory).toDynamicValue(context => ({
         id: TraceViewerWidget.ID,
@@ -49,11 +42,11 @@ export default new ContainerModule(bind => {
         bind(serviceIdentifier).toService(TraceViewerContribution)
     );
     bindViewContribution(bind, TraceExplorerContribution);
-    bind(TraceExplorerWidget).toSelf();
     bind(FrontendApplicationContribution).toService(TraceExplorerContribution);
+    bind(TraceExplorerWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: TRACE_EXPLORER_ID,
-        createWidget: () => context.container.get<TraceExplorerWidget>(TraceExplorerWidget)
+        createWidget: () => TraceExplorerWidget.createWidget(context.container)
     }));
     bind(TraceServerConfigService).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
