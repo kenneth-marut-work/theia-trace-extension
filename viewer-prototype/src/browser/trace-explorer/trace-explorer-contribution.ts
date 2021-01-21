@@ -5,7 +5,6 @@ import { FrontendApplicationContribution, FrontendApplication } from '@theia/cor
 
 @injectable()
 export class TraceExplorerContribution extends AbstractViewContribution<TraceExplorerWidget> implements FrontendApplicationContribution {
-
     constructor() {
         super({
             widgetId: TraceExplorerWidget.ID,

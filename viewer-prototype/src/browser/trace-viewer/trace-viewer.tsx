@@ -30,15 +30,15 @@ export class TraceViewerWidget extends ReactWidget {
     static LABEL = 'Trace Viewer';
 
     protected uri: Path;
-    private openedExperiment: Experiment | undefined;
-    private outputDescriptors: OutputDescriptor[] = [];
-    private tspClient: TspClient;
-    private traceManager: TraceManager;
-    private experimentManager: ExperimentManager;
-    private backgroundTheme: string;
+    protected openedExperiment: Experiment | undefined;
+    protected outputDescriptors: OutputDescriptor[] = [];
+    protected tspClient: TspClient;
+    protected traceManager: TraceManager;
+    protected experimentManager: ExperimentManager;
+    protected backgroundTheme: string;
 
-    private resizeHandlers: (() => void)[] = [];
-    private readonly addResizeHandler = (h: () => void) => {
+    protected resizeHandlers: (() => void)[] = [];
+    protected readonly addResizeHandler = (h: () => void) => {
         this.resizeHandlers.push(h);
     };
 
@@ -46,11 +46,11 @@ export class TraceViewerWidget extends ReactWidget {
 
     @inject(WidgetManager) protected readonly widgetManager: WidgetManager
     @inject(TraceViewerWidgetOptions) protected readonly options: TraceViewerWidgetOptions;
-    @inject(TspClientProvider) private tspClientProvider: TspClientProvider;
-    @inject(StatusBar) private statusBar: StatusBar;
-    @inject(FileSystem) private readonly fileSystem: FileSystem;
+    @inject(TspClientProvider) protected tspClientProvider: TspClientProvider;
+    @inject(StatusBar) protected statusBar: StatusBar;
+    @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
-    @inject(TheiaMessageManager) private readonly _signalHandler: TheiaMessageManager;
+    @inject(TheiaMessageManager) protected readonly _signalHandler: TheiaMessageManager;
     @inject(MessageService) protected readonly messageService: MessageService;
     
     @postConstruct()
@@ -74,11 +74,11 @@ export class TraceViewerWidget extends ReactWidget {
         this.explorerWidget = await this.widgetManager.getOrCreateWidget(TraceExplorerWidget.ID);
         // Make node focusable so it can achieve focus on activate (avoid warning);
         this.node.tabIndex = 0;
-        // this.toDispose.push(this.analysisWidget.outputAddedSignal(output => this.onOutputAdded(output)));
-        // this.toDispose.push(this.openedTracesWidget.experimentSelectedSignal(experiment => this.onExperimentSelected(experiment)));
+        this.toDispose.push(this.explorerWidget.outputAddedSignal(output => this.onOutputAdded(output)));
+        this.toDispose.push(this.explorerWidget.experimentSelectedSignal(experiment => this.onExperimentSelected(experiment)));
     }
 
-    private updateBackgroundTheme() {
+    protected updateBackgroundTheme(): void {
         const currentThemeType = ThemeService.get().getCurrentTheme().type;
         signalManager().fireThemeChangedSignal(currentThemeType);
     }
@@ -148,7 +148,7 @@ export class TraceViewerWidget extends ReactWidget {
                         this.id = experiment.UUID;
 
                         if (this.isVisible) {
-                            // this.openedTracesWidget.onWidgetActivated(experiment);
+                            this.explorerWidget.onOpenedTracesWidgetActivated(experiment);
                         }
                     }
 
@@ -174,14 +174,14 @@ export class TraceViewerWidget extends ReactWidget {
     onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         if (this.openedExperiment) {
-            // this.openedTracesWidget.onWidgetActivated(this.openedExperiment);
+            this.explorerWidget.onOpenedTracesWidgetActivated(this.openedExperiment);
         }
     }
 
     onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.openedExperiment) {
-            // this.openedTracesWidget.onWidgetActivated(this.openedExperiment);
+            this.explorerWidget.onOpenedTracesWidgetActivated(this.openedExperiment);
         }
         this.node.focus();
     }
@@ -203,7 +203,7 @@ export class TraceViewerWidget extends ReactWidget {
         </div>;
     }
 
-    private onOutputAdded(payload: OutputAddedSignalPayload) {
+    protected onOutputAdded(payload: OutputAddedSignalPayload): void {
         if (this.openedExperiment && payload.getExperiment().UUID === this.openedExperiment.UUID) {
             const exist = this.outputDescriptors.find(output => output.id === payload.getOutputDescriptor().id);
             if (!exist) {
@@ -213,13 +213,13 @@ export class TraceViewerWidget extends ReactWidget {
         }
     }
 
-    private onOutputRemoved(outputId: string) {
+    protected onOutputRemoved(outputId: string): void {
         const outputToKeep = this.outputDescriptors.filter(output => output.id !== outputId);
         this.outputDescriptors = outputToKeep;
         this.update();
     }
 
-    private onExperimentSelected(experiment: Experiment) {
+    protected onExperimentSelected(experiment: Experiment) {
         if (this.openedExperiment && this.openedExperiment.UUID === experiment.UUID) {
             this.shell.activateWidget(this.openedExperiment.UUID);
         }
@@ -228,7 +228,7 @@ export class TraceViewerWidget extends ReactWidget {
     /*
      * TODO: use backend service to find traces
      */
-    private async findTraces(rootStat: FileStat | undefined, traces: Array<Path>, isCancelled: { value: boolean; }) {
+    protected async findTraces(rootStat: FileStat | undefined, traces: Array<Path>, isCancelled: { value: boolean; }): Promise<void> {
         /**
          * If single file selection then return single trace in traces, if directory then find
          * recoursivly CTF traces in starting from root directory.
@@ -256,7 +256,7 @@ export class TraceViewerWidget extends ReactWidget {
             }
         }
     }
-    private isCtf(stat: FileStat): boolean {
+    protected isCtf(stat: FileStat): boolean {
         if (stat.children) {
             for (let i = 0; i < stat.children.length; i++) {
                 const path = new Path(stat.children[i].uri);

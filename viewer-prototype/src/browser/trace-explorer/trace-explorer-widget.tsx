@@ -27,8 +27,9 @@ export class TraceExplorerWidget extends BaseWidget {
         return this.openedTracesWidget.experimentSelectedSignal;
     }
 
-    get onOpenedTracesWidgetActivated(): (experiment: Experiment) => void {
-        return this.openedTracesWidget.onWidgetActivated;
+    onOpenedTracesWidgetActivated(experiment: Experiment): void {
+        console.log('SENTINEL EVEN NEWER CODE');
+        return this.openedTracesWidget.onWidgetActivated(experiment);
     }
 
     static createWidget(parent: interfaces.Container): TraceExplorerWidget {
