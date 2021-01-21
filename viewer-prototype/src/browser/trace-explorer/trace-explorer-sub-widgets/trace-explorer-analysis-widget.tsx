@@ -28,6 +28,7 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
         this.toDispose.push(this.openedTracesWidget.availableOutputDescriptorsDidChange(() => {
             this.update();
         }));
+        this.toDispose.push(this.outputAddedEmitter);
         this.update();
     }
 

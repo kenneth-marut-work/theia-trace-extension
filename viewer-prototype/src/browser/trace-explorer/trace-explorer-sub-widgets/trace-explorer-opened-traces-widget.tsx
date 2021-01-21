@@ -68,6 +68,8 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
             this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
 
+        this.toDispose.pushAll([this.experimentSelectedEmitter, this.availableOutputDescriptorsEmitter]);
+
         await this.initialize();
         this.update();
     }

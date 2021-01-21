@@ -1,4 +1,4 @@
-import { MessageService, Path } from '@theia/core';
+import { DisposableCollection, MessageService, Path } from '@theia/core';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { ApplicationShell, Message, StatusBar, WidgetManager } from '@theia/core/lib/browser';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
@@ -52,7 +52,7 @@ export class TraceViewerWidget extends ReactWidget {
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
     @inject(TheiaMessageManager) protected readonly _signalHandler: TheiaMessageManager;
     @inject(MessageService) protected readonly messageService: MessageService;
-    
+
     @postConstruct()
     async init(): Promise<void> {
         this.uri = new Path(this.options.traceURI);
@@ -71,11 +71,25 @@ export class TraceViewerWidget extends ReactWidget {
             this.traceManager = this.tspClientProvider.getTraceManager();
             this.experimentManager = this.experimentManager = this.tspClientProvider.getExperimentManager();
         });
+        this.toDispose.push(this.widgetManager.onDidCreateWidget(({ widget }) => {
+            if (widget instanceof TraceExplorerWidget) {
+                this.explorerWidget = widget;
+                this.subscribeToExplorerEvents();
+            }
+        }));
         this.explorerWidget = await this.widgetManager.getOrCreateWidget(TraceExplorerWidget.ID);
+        this.subscribeToExplorerEvents();
+        this.toDispose.push(this.toDisposeOnNewExplorer);
         // Make node focusable so it can achieve focus on activate (avoid warning);
         this.node.tabIndex = 0;
-        this.toDispose.push(this.explorerWidget.outputAddedSignal(output => this.onOutputAdded(output)));
-        this.toDispose.push(this.explorerWidget.experimentSelectedSignal(experiment => this.onExperimentSelected(experiment)));
+    }
+
+    protected readonly toDisposeOnNewExplorer = new DisposableCollection();
+
+    protected subscribeToExplorerEvents(): void {
+        this.toDisposeOnNewExplorer.dispose();
+        this.toDisposeOnNewExplorer.push(this.explorerWidget.outputAddedSignal(output => this.onOutputAdded(output)));
+        this.toDisposeOnNewExplorer.push(this.explorerWidget.experimentSelectedSignal(experiment => this.onExperimentSelected(experiment)));
     }
 
     protected updateBackgroundTheme(): void {

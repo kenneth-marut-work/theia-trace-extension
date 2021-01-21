@@ -28,7 +28,6 @@ export class TraceExplorerWidget extends BaseWidget {
     }
 
     onOpenedTracesWidgetActivated(experiment: Experiment): void {
-        console.log('SENTINEL EVEN NEWER CODE');
         return this.openedTracesWidget.onWidgetActivated(experiment);
     }
 
