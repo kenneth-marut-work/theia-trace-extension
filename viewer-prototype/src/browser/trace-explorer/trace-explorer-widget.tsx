@@ -35,6 +35,7 @@ export class TraceExplorerWidget extends BaseWidget {
         const layout = this.layout = new PanelLayout();
         layout.addWidget(this.placeholderWidget);
         layout.addWidget(this.traceViewsContainer);
+        this.node.tabIndex = 0;
         this.update();
     }
 
@@ -48,5 +49,10 @@ export class TraceExplorerWidget extends BaseWidget {
             this.traceViewsContainer.hide();
             this.placeholderWidget.show();
         }
+    }
+
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.node.focus();
     }
 }

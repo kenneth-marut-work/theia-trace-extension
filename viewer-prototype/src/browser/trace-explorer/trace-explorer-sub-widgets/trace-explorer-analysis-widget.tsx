@@ -36,7 +36,7 @@ export class TraceExplorerAnalysisWidget extends ReactWidget {
         const key = Number(this.forceUpdateKey);
         const { openedExperiments, availableOutputDescriptors, selectedExperimentIndex } = this.openedTracesWidget;
         let outputsRowCount = 0;
-        const outputs = availableOutputDescriptors.get(openedExperiments[selectedExperimentIndex].UUID);
+        const outputs = availableOutputDescriptors.get(openedExperiments[selectedExperimentIndex]?.UUID);
         if (outputs) {
             outputsRowCount = outputs.length;
         }
