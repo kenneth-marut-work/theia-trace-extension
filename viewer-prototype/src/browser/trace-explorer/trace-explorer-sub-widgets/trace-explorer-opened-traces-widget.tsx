@@ -13,6 +13,20 @@ import ReactModal from 'react-modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy } from '@fortawesome/free-solid-svg-icons';
 
+import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { MenuPath, Command } from '@theia/core';
+
+
+export namespace PreferenceMenus {
+    export const PREFERENCE_EDITOR_CONTEXT_MENU: MenuPath = ['trace-explorer-context-menu'];
+}
+export namespace PreferencesCommands {
+    export const RESET_PREFERENCE: Command = {
+        id: 'preferences:reset',
+        label: 'Reset Setting'
+    };
+}
+
 @injectable()
 export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     static ID = 'trace-explorer-opened-traces-widget';
@@ -30,6 +44,7 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
 
     @inject(TspClientProvider) protected readonly tspClientProvider!: TspClientProvider;
     @inject(TraceExplorerTooltipWidget) protected readonly tooltipWidget!: TraceExplorerTooltipWidget;
+    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer!: ContextMenuRenderer;
 
     protected readonly updateRequestEmitter = new Emitter<void>();
     widgetWasUpdated = this.updateRequestEmitter.event;
@@ -97,6 +112,16 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
         await this.updateAvailableAnalysis(undefined);
     }
 
+    protected doHandleContextMenuEvent(event: React.MouseEvent<HTMLDivElement>): void {
+        const target = (event.target as HTMLElement);
+        const domRect = target.getBoundingClientRect();
+        this.contextMenuRenderer.render({
+            menuPath: PreferenceMenus.PREFERENCE_EDITOR_CONTEXT_MENU,
+            anchor: { x: domRect.left, y: domRect.bottom },
+            args: []
+        });
+    }
+
     render(): React.ReactNode {
         const totalHeight = this.getTotalHeight();
         this.forceUpdateKey = !this.forceUpdateKey;
@@ -145,6 +170,7 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
             key={props.key}
             style={props.style}
             onClick={this.handleOnExperimentSelected}
+            onContextMenu={this.handleContextMenuEvent}
             data-id={`${props.index}`}>
             <div className='trace-element-container'>
                 <div className='trace-element-info' >
@@ -239,6 +265,7 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
     }
 
     protected handleOnExperimentSelected = (e: React.MouseEvent<HTMLDivElement>): void => this.doHandleOnExperimentSelected(e);
+    protected handleContextMenuEvent = (e: React.MouseEvent<HTMLDivElement>): void => this.doHandleContextMenuEvent(e);
 
     protected doHandleOnExperimentSelected(e: React.MouseEvent<HTMLDivElement>): void {
         const index = Number(e.currentTarget.getAttribute('data-id'));
