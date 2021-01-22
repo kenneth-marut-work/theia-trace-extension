@@ -12,20 +12,8 @@ import { TraceExplorerTooltipWidget } from './trace-explorer-tooltip-widget';
 import ReactModal from 'react-modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCopy } from '@fortawesome/free-solid-svg-icons';
-
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
-import { MenuPath, Command } from '@theia/core';
-
-
-export namespace PreferenceMenus {
-    export const PREFERENCE_EDITOR_CONTEXT_MENU: MenuPath = ['trace-explorer-context-menu'];
-}
-export namespace PreferencesCommands {
-    export const RESET_PREFERENCE: Command = {
-        id: 'preferences:reset',
-        label: 'Reset Setting'
-    };
-}
+import { TraceExplorerMenus } from '../trace-explorer-commands';
 
 @injectable()
 export class TraceExplorerOpenedTracesWidget extends ReactWidget {
@@ -116,10 +104,12 @@ export class TraceExplorerOpenedTracesWidget extends ReactWidget {
         const target = (event.target as HTMLElement);
         const domRect = target.getBoundingClientRect();
         this.contextMenuRenderer.render({
-            menuPath: PreferenceMenus.PREFERENCE_EDITOR_CONTEXT_MENU,
+            menuPath: TraceExplorerMenus.PREFERENCE_EDITOR_CONTEXT_MENU,
             anchor: { x: domRect.left, y: domRect.bottom },
             args: []
         });
+        event.preventDefault();
+        event.stopPropagation();
     }
 
     render(): React.ReactNode {
